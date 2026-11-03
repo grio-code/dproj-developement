@@ -19,7 +19,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="home/index.css" rel="stylesheet">
-<link href="dashboard/dashboard.css?v=12" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=16" rel="stylesheet">
 <!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
 <script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 
@@ -32,7 +32,7 @@
 <script src="firebase-starter/legacy-data.js?v=2"></script> <!-- brings back lists from before workspaces -->
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="dashboard/dashboard.js?v=18" defer></script>
+<script src="dashboard/dashboard.js?v=21" defer></script>
 <script src="dashboard/side-menu.js?v=1" defer></script> <!-- hamburger menu on phones and iPads -->
 
 
@@ -126,7 +126,7 @@
 
 
 <!-- ================= Workspace dashboard (signed in) =================
-     Built by dashboard/dashboard.js. Sections switch with the address: #dashboard, #projects, #projects/<id>,
+     Built by dashboard/dashboard.js. Sections switch with the address: #dashboard, #projects/<id> (project dashboard), #projects/<id>/details,
      #schedule, #files, #selections, #messages. -->
 <!-- <div class="db-bg" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div><div class="grid"></div></div> -->
 
@@ -220,13 +220,27 @@
       <section class="db-panel db-glass db-loose-box" id="dbLoose" aria-label="Lists not in a project" hidden></section>
     </section>
 
-    <!-- A project's page (index.html#projects/<id>): its details, then tabs for punch lists, daily logs, schedule, selections, files and messages.
+    <!-- A project's details page (index.html#projects/<id>/details): its details, then tabs for punch lists, daily logs, schedule, selections, files and messages.
          Every project is listed in the left sidebar, so there is no separate "My projects" page. -->
-    <section class="db-view" id="v-projects" aria-label="Project" hidden>
+    <!-- ADDED: a project's own dashboard (index.html#projects/<id>): what needs attention, recent activity, this week.
+         Its "Show project details" button opens the project page below (#projects/<id>/details). -->
+    <section class="db-view" id="v-project" aria-label="Project dashboard" hidden>
+      <div id="projDash"></div>
+    </section>
+
+    <section class="db-view" id="v-projects" aria-label="Project details" hidden>
       <div id="projDetail"></div>
     </section>
 
   </div>
+
+  <!-- ADDED: Home button, bottom of the screen on phones and iPads only (hidden above 1024px; the sidebar is always there) -->
+  <nav class="db-dock db-glass" aria-label="Home">
+    <a class="db-dock-home" id="dbDockHome" href="index.html#dashboard">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20"/></svg>
+      <span>Home</span>
+    </a>
+  </nav>
 </div>
 <div class="db-toast" id="dbToast" role="status" aria-live="polite"></div>
 <!-- ADDED: sign-off box. Opens when someone ticks an item in Up next; the item is only marked done after they type their name and sign. -->

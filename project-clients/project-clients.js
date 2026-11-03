@@ -22,7 +22,7 @@
   const $ = id => document.getElementById(id);
 
   const pid = new URLSearchParams(location.search).get('project') || '';
-  const projUrl = 'index.html#projects/' + encodeURIComponent(pid);
+  const projUrl = 'index.html#projects/' + encodeURIComponent(pid) + '/details'; // CHANGED: it is opened from the project's details page
 
   // What clients may see. View-only, every one of them: there is no switch that lets a client edit anything.
   // The Firestore rules accept only these keys in clientAccess.

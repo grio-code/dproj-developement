@@ -11,6 +11,8 @@
   if (!root) return;
 
   const DAY = 864e5;
+  const QUIET_DAYS = 14;       // ADDED: no activity on a project for this many days = it needs a look
+  const LONG_LIST = 25;        // ADDED: a punch list with this many open items is "long"
   const NEARLY_DONE = 3;       // this few left = "is N items from done" in the summary
   const MAX_DETAIL_JOBS = 60;  // read items for at most this many punch lists (most recent first)
   const TASKS_SHOWN = 8;       // open items shown in Up next before "Show all"
@@ -308,7 +310,20 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleAdd(false); });
   addMenu.addEventListener('click', () => toggleAdd(false));
 
-  // One sentence: how much is open, and which project is closest to done. Parts that point somewhere are links.
+  // ADDED: a second sentence for the briefing: what was signed off this week, and what is assigned to you.
+  // Empty until the items have loaded, so the numbers are never a guess.
+  function briefDetail(a) {
+    if (!st.loaded) return '';
+    const bits = [];
+    if (a.signedWeek) bits.push(plural(a.signedWeek, 'item') + (a.signedWeek === 1 ? ' was' : ' were') + ' signed off in the last 7 days');
+    else if (a.openTotal) bits.push('nothing has been signed off in the last 7 days');
+    if (a.mineCount) bits.push(plural(a.mineCount, 'open item') + (a.mineCount === 1 ? ' is' : ' are') + ' assigned to you');
+    if (!bits.length) return '';
+    const text = bits.join(', and ');
+    return ' ' + text.charAt(0).toUpperCase() + text.slice(1) + '.';
+  }
+
+  // The briefing: how much is open, and which project is closest to done (plus the second sentence from briefDetail): how much is open, and which project is closest to done. Parts that point somewhere are links.
   function renderBrief(a) {
     const b = $('dbBrief');
     b.textContent = '';
@@ -323,17 +338,27 @@
         if (a.openTotal) add(plural(a.openTotal, 'item') + (a.openTotal === 1 ? ' is' : ' are') + ' still open on ');
         else add('Every punch item on ');
         add(projName(a.focus), projUrl(a.focus.id));
-        add(a.openTotal ? (a.openTotal <= NEARLY_DONE ? ', so it is almost done.' : '.') : ' is signed off.');
+        // ADDED: say how many punch lists the open items are spread across
+        const openLists = a.jobs.filter(j => listCounts(j).open > 0).length;
+        const across = a.openTotal && openLists > 1 ? ', across ' + plural(openLists, 'punch list') : '';
+        add(a.openTotal ? across + (a.openTotal <= NEARLY_DONE ? ', so it is almost done.' : '.') : ' is signed off.');
+        add(briefDetail(a));
       }
     } else if (!a.projects.length && !st.jobs.length) {
       add('Your workspace is ready. ');
       add(st.perm.createProjects ? 'Create your first project.' : 'Projects will show up here once someone creates one.', st.perm.createProjects ? 'new-project.html' : null);
     } else {
-      if (a.openTotal) { add(plural(a.openTotal, 'item')); add(a.openTotal === 1 ? ' is still open' : ' are still open'); }
+      if (a.openTotal) {
+        // ADDED: also say how many punch lists the open items are spread across
+        const openLists = a.jobs.filter(j => listCounts(j).open > 0).length;
+        add(plural(a.openTotal, 'item'));
+        add((a.openTotal === 1 ? ' is' : ' are') + ' still open' + (openLists ? ' across ' + plural(openLists, 'punch list') : ''));
+      }
       else add('Every punch item is signed off');
       const close = a.projects.filter(x => x.open > 0 && x.open <= NEARLY_DONE).sort((x, y) => x.open - y.open)[0];
       if (close) { add(', and '); add(projShort(close.p), projUrl(close.p.id)); add(' is ' + plural(close.open, 'item') + ' from done.'); }
       else add('.');
+      add(briefDetail(a));
     }
     parts.forEach(p => b.appendChild(p.href ? link(p.href, null, p.text) : document.createTextNode(p.text)));
     if (st.loaded) { b.classList.remove('is-ready'); void b.offsetWidth; b.classList.add('is-ready'); }
@@ -457,8 +482,8 @@
     return p ? link(projUrl(p.id), null, projShort(p)) : link(listUrl(j.id), null, listShort(j));
   }
 
-  function renderFeed(a) {
-    const ul = $('dbFeed');
+  function renderFeed(a) { fillFeed($('dbFeed'), a); }
+  function fillFeed(ul, a) { // CHANGED: split out so the project dashboard can reuse it
     ul.textContent = '';
     if (!st.loaded && !a.events.length) { ul.appendChild(el('li', 'db-empty', 'Loading activity…')); return; }
     if (!a.events.length) { ul.appendChild(el('li', 'db-empty', a.focus ? 'Sign-offs, new items and punch lists for this project show up here as your team works.' : 'Sign-offs, new items, punch lists and projects show up here as your team works.')); return; }
@@ -821,11 +846,149 @@
   }
 
   // One project's page: details and overall progress, timeline, then tabs for Punch lists and Daily logs
+  // ---------- ADDED: the Add menu on a project's page ----------
+  // Punch list works now; the rest are listed so people can see what is coming, and are marked Soon.
+  function projectAddMenu(newListUrl) {
+    const wrap = el('div', 'db-add db-add--proj');
+    const btn = el('button', 'db-add-btn db-add-btn--label');
+    btn.type = 'button';
+    btn.setAttribute('aria-haspopup', 'menu');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+    btn.appendChild(el('span', null, 'Add'));
+    const menu = el('div', 'db-add-menu db-add-menu--end');
+    menu.setAttribute('role', 'menu');
+    const first = link(newListUrl, null, 'Punch list');
+    first.setAttribute('role', 'menuitem');
+    menu.appendChild(first);
+    ['Daily log', 'Schedule event', 'Selection', 'File', 'Message'].forEach(label => {
+      const item = el('span', 'db-add-soon');
+      item.setAttribute('role', 'menuitem');
+      item.setAttribute('aria-disabled', 'true');
+      item.append(document.createTextNode(label + ' '), el('span', 'soon', 'Soon'));
+      menu.appendChild(item);
+    });
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = !menu.classList.contains('is-open');
+      closeAddMenus();
+      menu.classList.toggle('is-open', on);
+      btn.setAttribute('aria-expanded', String(on));
+    });
+    menu.addEventListener('click', closeAddMenus);
+    wrap.append(btn, menu);
+    return wrap;
+  }
+  function closeAddMenus() {
+    document.querySelectorAll('.db-add--proj .db-add-menu.is-open').forEach(m => {
+      m.classList.remove('is-open');
+      m.previousElementSibling.setAttribute('aria-expanded', 'false');
+    });
+  }
+  // Listeners are added once here (the project page is redrawn often, so they must not be added per draw)
+  document.addEventListener('click', closeAddMenus);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddMenus(); });
+
+  // ---------- ADDED: a project's own dashboard (index.html#projects/<id>) ----------
+  // Same three questions as the main dashboard, but for one project: what needs attention, what happened lately,
+  // what is on this week. "Show project details" goes to the full project page (#projects/<id>/details).
+  function renderProjectDash(id) {
+    const box = $('projDash');
+    box.textContent = '';
+    box.appendChild(link('#dashboard', 'db-back', '‹ Dashboard'));
+    const p = st.projects.find(x => x.id === id);
+    if (!p) { box.appendChild(el('p', 'db-empty', st.loaded ? 'That project was not found. It may have been deleted.' : 'Loading…')); return; }
+
+    // Reuse analyze() for this one project: it already works out recent activity and the numbers
+    const prev = st.focus; st.focus = p.id;
+    let a; try { a = analyze(); } finally { st.focus = prev; }
+    const c = projCounts(p);
+    const detailsUrl = projUrl(p.id) + '/details';
+
+    // Headline + the details button
+    const h = el('h1', 'db-brief');
+    const nm = projName(p);
+    if (!c.lists) h.textContent = nm + ' has no punch lists yet.';
+    else if (!st.loaded) h.textContent = 'Checking ' + nm + '…';
+    else if (!c.open) h.textContent = 'Every punch item on ' + nm + ' is signed off.';
+    else h.textContent = plural(c.open, 'item') + (c.open === 1 ? ' is' : ' are') + ' still open on ' + nm + (c.open <= NEARLY_DONE ? ', so it is almost done.' : '.');
+    const head = el('div', 'db-pd-head');
+    head.append(h, link(detailsUrl, 'db-btn db-btn--main', 'Show project details'));
+    box.appendChild(head);
+    box.appendChild(el('p', 'db-sub', p.address || [p.lot && 'Lot ' + p.lot, p.community].filter(Boolean).join(', ') || 'No address yet'));
+    const prog = el('div', 'db-pd-prog db-glass');
+    prog.append(tape(c.pct, c.total > 0 && c.open === 0, nm + ' progress'), el('span', null, progressText(c)));
+    box.appendChild(prog);
+
+    // Needs your attention: worked out from this project's own data
+    const att = el('section', 'db-panel db-glass db-attn');
+    att.setAttribute('aria-label', 'Needs your attention');
+    att.appendChild(el('div', 'db-panel-h')).appendChild(el('h2', null, 'Needs your attention'));
+    const rows = [];
+    if (st.loaded) {
+      const open = [];
+      (p._lists || []).forEach(j => (j._items || []).forEach(i => { if (!i.done) open.push({ ...i, job: j }); }));
+      const mine = open.filter(t => t.assignedTo === st.user.uid);
+      if (mine.length) rows.push([listUrl(mine[0].job.id), plural(mine.length, 'open item') + (mine.length === 1 ? ' is' : ' are') + ' assigned to you', mine.length === 1 ? '“' + trim(mine[0].text) + '”' : 'Starting with “' + trim(mine[0].text) + '”']);
+      const oldest = open.filter(t => t.createdAt).sort((x, y) => x.createdAt - y.createdAt)[0];
+      const days = oldest ? Math.floor((Date.now() - oldest.createdAt) / DAY) : 0;
+      if (days >= 7) rows.push([listUrl(oldest.job.id), 'The longest-waiting item has been open ' + plural(days, 'day'), '“' + trim(oldest.text) + '” on ' + listShort(oldest.job)]);
+      (p._lists || []).filter(j => listCounts(j).open >= LONG_LIST).forEach(j => rows.push([listUrl(j.id), listShort(j) + ' is a long list', plural(listCounts(j).open, 'item') + ' still open']));
+      const quiet = p._last ? Math.floor((Date.now() - p._last) / DAY) : 0;
+      if (c.open && quiet >= QUIET_DAYS) rows.push([null, 'This project has gone quiet', 'No activity for ' + plural(quiet, 'day')]);
+    }
+    if (rows.length) {
+      const ul = el('ul', 'db-att-list');
+      rows.forEach(([href, title, sub]) => {
+        const li = el('li');
+        const row = href ? link(href, 'db-att-row') : el('div', 'db-att-row');
+        row.append(el('b', null, title), el('span', null, sub));
+        li.appendChild(row);
+        ul.appendChild(li);
+      });
+      att.appendChild(ul);
+    } else att.appendChild(el('p', 'db-empty', st.loaded ? 'Nothing needs your attention on this project right now.' : 'Checking…'));
+    box.appendChild(att);
+
+    // Recent activity + this week
+    const cols = el('div', 'db-cols');
+    const act = el('section', 'db-panel db-glass');
+    act.setAttribute('aria-label', 'Recent activity');
+    act.appendChild(el('div', 'db-panel-h')).appendChild(el('h2', null, 'Recent activity'));
+    const feed = el('ul', 'db-feed');
+    fillFeed(feed, a);
+    act.appendChild(feed);
+    const wk = el('section', 'db-panel db-glass');
+    wk.setAttribute('aria-label', 'This week');
+    const wkH = el('div', 'db-panel-h');
+    wkH.append(el('h2', null, 'This week'), el('span', 'db-pill', 'Coming soon'));
+    wk.appendChild(wkH);
+    wk.appendChild(weekStrip());
+    wk.appendChild(el('p', 'db-empty', 'Scheduling is coming soon. Trade visits and milestones for this project will show here.'));
+    cols.append(act, wk);
+    box.appendChild(cols);
+  }
+
+  // Monday to Sunday of the current week, today marked. Ready for schedule entries once scheduling exists.
+  function weekStrip() {
+    const wrap = el('div', 'db-week');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const start = new Date(today); start.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const cell = el('div', 'db-wd' + (d.getTime() === today.getTime() ? ' is-today' : ''));
+      if (d.getTime() === today.getTime()) cell.setAttribute('aria-current', 'date');
+      cell.append(el('span', null, d.toLocaleDateString(undefined, { weekday: 'short' })), el('b', null, String(d.getDate())));
+      wrap.appendChild(cell);
+    }
+    return wrap;
+  }
+
   function renderDetail(id) {
     const box = $('projDetail');
     box.textContent = '';
     const p = st.projects.find(x => x.id === id);
-    box.appendChild(link('#dashboard', 'db-back', '‹ Dashboard'));
+    box.appendChild(link(p ? projUrl(p.id) : '#dashboard', 'db-back', p ? '‹ Project dashboard' : '‹ Dashboard')); // CHANGED: back goes to the project's own dashboard
     if (!p) { box.appendChild(el('p', 'db-empty', st.loaded ? 'That project was not found. It may have been deleted.' : 'Loading…')); return; }
     const c = projCounts(p);
     const newList = 'allLists.html?new=1&project=' + encodeURIComponent(p.id);
@@ -835,7 +998,8 @@
     head.append(el('h2', null, projName(p)), el('p', 'db-sub', p.address || 'No address yet'));
     top.appendChild(head);
     const actions = el('div', 'db-detail-actions');
-    if (st.perm.manageLists) actions.appendChild(link(newList, 'db-btn db-btn--main', 'New punch list'));
+    // CHANGED: the "New punch list" button is now an Add menu (punch list, daily log, schedule event, selection, file, message)
+    if (st.perm.manageLists) actions.appendChild(projectAddMenu(newList));
     // FIXED: the Client information button is back. It opens project-clients.html for this project (view-only unless you can edit projects)
     actions.appendChild(link('project-clients.html?project=' + encodeURIComponent(p.id), 'db-btn', 'Client information'));
     if (st.perm.manageProjects) actions.appendChild(link('new-project.html?edit=' + encodeURIComponent(p.id), 'db-btn', 'Edit project'));
@@ -1017,12 +1181,16 @@
   const VIEWS = ['dashboard', 'projects'];
   function route() {
     const h = decodeURIComponent(location.hash.slice(1));
-    let [view, sub] = h.split('/');
-    if (!VIEWS.includes(view) || (view === 'projects' && !sub)) { sub = ''; view = 'dashboard'; } // old links (#projects, #files...) land on the dashboard
-    VIEWS.forEach(v => { const panel = document.getElementById('v-' + v); if (panel) { panel.hidden = v !== view; panel.style.display = v === view ? 'block' : 'none'; } });
+    let [view, sub, page] = h.split('/');
+    if (!VIEWS.includes(view) || (view === 'projects' && !sub)) { sub = ''; page = ''; view = 'dashboard'; } // old links (#projects, #files...) land on the dashboard
+    // CHANGED: #projects/<id> is the project's own dashboard; #projects/<id>/details is the full project page
+    const showing = view === 'projects' ? (page === 'details' ? 'projects' : 'project') : view;
+    ['dashboard', 'project', 'projects'].forEach(v => { const panel = document.getElementById('v-' + v); if (panel) { panel.hidden = v !== showing; panel.style.display = v === showing ? 'block' : 'none'; } });
     root.querySelectorAll('.db-nav a').forEach(a => a.dataset.view === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+    const dockHome = $('dbDockHome'); // ADDED: the bottom Home button is "current" while the dashboard is showing
+    if (dockHome) view === 'dashboard' ? dockHome.setAttribute('aria-current', 'page') : dockHome.removeAttribute('aria-current');
     markSide();
-    if (view === 'projects') renderDetail(sub);
+    if (view === 'projects') page === 'details' ? renderDetail(sub) : renderProjectDash(sub);
   }
   let lastView = '';
   window.addEventListener('hashchange', () => {

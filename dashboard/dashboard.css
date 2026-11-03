@@ -586,3 +586,51 @@ a.db-btn--main, a.db-btn--main:visited { color: var(--amber-ink); }
 
 /* Punch lists not in a project, now at the bottom of the dashboard */
 .db-loose-box { margin-top: 20px; }
+
+/* ---------- ADDED: floating Home button, phones and iPads only ---------- */
+.db-dock { display: none; } /* desktop: the sidebar is always there */
+@media (max-width: 1024px) {
+  .db { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); } /* keep content clear of the floating button */
+  .db-dock {
+    display: block;
+    position: fixed; z-index: 55; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    padding: 6px; border-radius: 999px;
+    background: rgba(22, 22, 22, .88);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+  }
+  .db-dock-home {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 0 22px; border-radius: 999px;
+    color: #fff; text-decoration: none; font: 600 15px var(--f-body);
+  }
+  .db-dock-home svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .db-dock-home:hover { background: rgba(255, 255, 255, .1); }
+  .db-dock-home[aria-current="page"] { background: var(--amber); color: var(--amber-ink); }
+  .db-dock-home:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .db-toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); } /* sit above the floating button */
+}
+/* The slide-out menu covers the button while it is open */
+.db.is-menu-open .db-dock { visibility: hidden; }
+
+/* ---------- ADDED: a project's own dashboard ---------- */
+.db-pd-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; margin-bottom: 4px; }
+.db-pd-head .db-brief { margin: 0; flex: 1 1 420px; }
+.db-pd-head .db-btn { flex: 0 0 auto; margin-top: 8px; }
+.db-pd-prog { display: grid; gap: 8px; padding: 14px 16px; margin: 4px 0 18px; font-size: 14px; color: var(--muted); }
+.db-att-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.db-att-row { display: grid; gap: 2px; padding: 10px 14px; border-radius: 10px; background: var(--glass); box-shadow: inset 3px 0 0 var(--amber); color: inherit; text-decoration: none; }
+a.db-att-row:hover { background: var(--glass-hi); }
+a.db-att-row:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.db-att-row b { font-weight: 600; }
+.db-att-row span { font-size: 14px; color: var(--muted); }
+.db-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+.db-wd { display: grid; justify-items: center; gap: 2px; padding: 8px 0; border-radius: 10px; background: var(--glass); font-size: 12px; color: var(--muted); }
+.db-wd b { font: 700 20px/1 var(--f-display); color: #fff; }
+.db-wd.is-today { box-shadow: inset 0 0 0 2px var(--amber); }
+.db-wd.is-today span { color: var(--amber); }
+
+/* ---------- ADDED: the Add menu on a project's page ---------- */
+.db-add-btn--label { display: inline-flex; align-items: center; gap: 8px; width: auto; height: 44px; padding: 0 20px 0 16px; border-radius: 999px; font: 600 15px var(--f-body); }
+.db-add-menu--end { left: auto; right: 0; }
+.db-detail-top { position: relative; z-index: 5; } /* so the open menu is drawn over the boxes under it */
