@@ -1,15 +1,5 @@
 // ©HomeHub LLC 2026
 
-// Settings page: your profile, the workspace, its members, and (for admins) admin controls.
-//
-// Reads / writes the same Firestore data the sign-up wizard creates:
-//   users/{uid}/profile/info            name, username, logo (profile photo), workspaceId
-//   workspaces/{wid}                    name, ownerId, createdAt, logo (company logo, added here)
-//   workspaces/{wid}/members/{uid}      role, displayName, username, email, photo, joinedAt, canEdit, admin
-//
-// Admins: the owner (who created the workspace) plus any member an admin has switched "Admin" on for, e.g. a
-// second founder or CEO. Admins get the same controls as the owner, but nobody can demote or remove the owner.
-//   workspaces/{wid}/invites/{email}    pending invitations
 (() => {
   'use strict';
   if (!window.firebase) return;
