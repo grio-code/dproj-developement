@@ -4,11 +4,11 @@
 // This is the plain-script version of the config. The "import ... from 'firebase/app'" version Firebase shows
 // only works with a build tool (npm), and this app loads Firebase with <script> tags in allLists.html instead.
 window.FIREBASE_CONFIG = {
-    apiKey: "AIzaSyByN_WMAfhNaRD697-s-7LtXE6OwIs83-Q",
-    authDomain: "homehub-721.firebaseapp.com",
-    projectId: "homehub-721",
-    storageBucket: "homehub-721.firebasestorage.app",
-    messagingSenderId: "307297100935",
-    appId: "1:307297100935:web:4ee938afc293289683c422",
-    measurementId: "G-FD53HSXHLF"
+  apiKey: "AIzaSyDiawCpgVBgi6_fJmWkHwEi6Uz4RcPCKfo",
+  authDomain: "homehub-developement.firebaseapp.com",
+  projectId: "homehub-developement",
+  storageBucket: "homehub-developement.firebasestorage.app",
+  messagingSenderId: "143386564301",
+  appId: "1:143386564301:web:30b20f01f272d2b9133b84",
+  measurementId: "G-37V0XPF2EP"
 };
