@@ -40,15 +40,65 @@ body > :not(.fnav):not(.dock):not(svg) {
   overflow: hidden; pointer-events: none;
   background: #121212;
 }
-.bd-glow { position: absolute; border-radius: 50%; will-change: transform; }
-.bd-g1 { width: 70vmax; height: 70vmax; left: -25vmax; top: -30vmax; background: radial-gradient(circle, #2d6aa0 0%, transparent 62%); animation: bd-drift1 26s ease-in-out infinite alternate; }
-.bd-g2 { width: 70vmax; height: 70vmax; right: -30vmax; bottom: -35vmax; background: radial-gradient(circle, #f0b232 0%, transparent 60%); animation: bd-drift2 30s ease-in-out infinite alternate; }
-.bd-g3 { width: 50vmax; height: 50vmax; right: 5vmax; top: -20vmax; opacity: .6; background: radial-gradient(circle, #e8641f 0%, transparent 60%); animation: bd-drift3 22s ease-in-out infinite alternate; }
-.bd-g4 { width: 55vmax; height: 55vmax; left: 15vmax; bottom: -30vmax; opacity: .7; background: radial-gradient(circle, #1f8f8a 0%, transparent 60%); animation: bd-drift4 34s ease-in-out infinite alternate; }
-@keyframes bd-drift1 { to { transform: translate(35vmax, 25vmax) scale(1.15); } }
-@keyframes bd-drift2 { to { transform: translate(-40vmax, -18vmax) scale(.9); } }
-@keyframes bd-drift3 { to { transform: translate(-30vmax, 28vmax) scale(1.2); } }
-@keyframes bd-drift4 { to { transform: translate(30vmax, -22vmax) scale(1.1); } }
+.bd-glow { 
+  position: absolute; 
+  border-radius: 50%; 
+  will-change: transform; 
+}
+.bd-g1 { 
+  width: 70vmax; 
+  height: 70vmax; 
+  left: -25vmax; 
+  top: -30vmax; 
+  background: radial-gradient(circle, #2d6aa0 0%, transparent 62%); 
+  animation: bd-drift1 26s ease-in-out infinite alternate; 
+}
+.bd-g2 { 
+  width: 70vmax; 
+  height: 70vmax; 
+  right: -30vmax; 
+  bottom: -35vmax; 
+  background: radial-gradient(circle, #f0b232 0%, transparent 60%); 
+  animation: bd-drift2 30s ease-in-out infinite alternate; 
+}
+.bd-g3 { 
+  width: 50vmax; 
+  height: 50vmax; 
+  right: 5vmax; 
+  top: -20vmax; 
+  opacity: .6; 
+  background: radial-gradient(circle, #e8641f 0%, transparent 60%); 
+  animation: bd-drift3 22s ease-in-out infinite alternate; 
+}
+.bd-g4 { 
+  width: 55vmax; 
+  height: 55vmax; 
+  left: 15vmax; 
+  bottom: -30vmax; 
+  opacity: .7; 
+  background: radial-gradient(circle, #1f8f8a 0%, transparent 60%); 
+  animation: bd-drift4 34s ease-in-out infinite alternate; 
+}
+@keyframes bd-drift1 { 
+  to { 
+    transform: translate(35vmax, 25vmax) scale(1.15); 
+  } 
+}
+@keyframes bd-drift2 { 
+  to { 
+    transform: translate(-40vmax, -18vmax) scale(.9); 
+  } 
+}
+@keyframes bd-drift3 { 
+  to { 
+    transform: translate(-30vmax, 28vmax) scale(1.2); 
+  } 
+}
+@keyframes bd-drift4 { 
+  to { 
+    transform: translate(30vmax, -22vmax) scale(1.1); 
+  } 
+}
 .bd-grid {
   position: absolute; inset: 0;
   background-image: linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
@@ -65,10 +115,22 @@ body > :not(.fnav):not(.dock):not(svg) {
   text-wrap: balance;
   text-shadow: 0 2px 24px rgba(0,0,0,.25);
 }
-.titlebar, .st-head { padding-top: 12px; margin-bottom: 8px; }
-.st-head { margin-bottom: 28px; } /* CHANGED: room between the big Settings title and the section links under it */
-.count .big { font-size: clamp(40px, 6vw, 56px); color: var(--accent); }
-.st-card-h h2, .sig-box h2 { text-transform: none; font-size: 32px; letter-spacing: -.005em; }
+.titlebar, .st-head { 
+  padding-top: 12px; 
+  margin-bottom: 8px; 
+}
+.st-head { 
+  margin-bottom: 28px; 
+} 
+.count .big { 
+  font-size: clamp(40px, 6vw, 56px); 
+  color: var(--accent); 
+}
+.st-card-h h2, .sig-box h2 { 
+  text-transform: none; 
+  font-size: 32px; 
+  letter-spacing: -.005em; 
+}
 
 /* ---------- Cards: dark glass so the glows show through ---------- */
 .login-card, .st-card, .room, ul.jobs a, .tip, .viewonly, .confirm.boxed {
@@ -77,22 +139,51 @@ body > :not(.fnav):not(.dock):not(svg) {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
-.login-card { border-radius: 8px; padding: 24px 22px 22px; }
-.login-card p { color: var(--lg-muted); }
-ul.jobs a { transition: transform .2s, border-color .2s; }
-ul.jobs a:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.55); }
-.banner { background: var(--chip); color: var(--ink); border: 1px solid rgba(141,184,222,.3); }
-.st-msg, .st-result { background: var(--sheet); }
+.login-card { 
+  border-radius: 8px; 
+  padding: 24px 22px 22px; 
+}
+.login-card p { 
+  color: var(--lg-muted); 
+}
+ul.jobs a { 
+  transition: transform .2s, border-color .2s;
+}
+ul.jobs a:hover { 
+  transform: translateY(-2px); 
+  border-color: rgba(255,255,255,.55); 
+}
+.banner { 
+  background: var(--chip); 
+  color: var(--ink); 
+  border: 1px solid rgba(141,184,222,.3); 
+}
+.st-msg, .st-result { 
+  background: var(--sheet); 
+}
 
 /* Sticky bars sit over scrolling content, so blur what passes underneath */
-header.top { background: rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+header.top { 
+  background: rgba(0, 0, 0, .55); 
+  -webkit-backdrop-filter: blur(14px); 
+  backdrop-filter: blur(14px); 
+}
 @media (max-width: 760px) {
-  .st-toc { background: rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .st-toc { background: rgba(0, 0, 0, .55); 
+    -webkit-backdrop-filter: blur(14px); 
+    backdrop-filter: blur(14px); 
+  }
 }
 
 /* Settings facts table: draw the cell lines with borders (the glass cards can't show a gap color) */
-.st-facts { gap: 0; background: transparent; }
-.st-facts > div { background: transparent; box-shadow: inset -1px -1px 0 var(--rule); }
+.st-facts { 
+  gap: 0; 
+  background: transparent; 
+}
+.st-facts > div { 
+  background: transparent; 
+  box-shadow: inset -1px -1px 0 var(--rule); 
+}
 
 /* ---------- Buttons: amber main button and outlined secondary, like the home page ---------- */
 .btn {
@@ -103,42 +194,93 @@ header.top { background: rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(14px)
   font-weight: 600;
   transition: transform .2s, background .2s, border-color .2s;
 }
-.btn:hover { border-color: #fff; background: rgba(255,255,255,.08); }
-.btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.btn:hover { 
+  border-color: #fff; 
+  background: rgba(255,255,255,.08); 
+}
+.btn:focus-visible { 
+  outline: 3px solid #fff; 
+  outline-offset: 3px; 
+}
 .btn.primary, .btn--primary {
   background: #f0b232;
   color: #231800;
   border-color: transparent;
 }
-.btn.primary:hover, .btn--primary:hover { background: #ffc54d; border-color: transparent; opacity: 1; transform: translateY(-2px); }
-.btn.danger, .btn--danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
-.btn.danger:hover, .btn--danger:hover { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
-.btn--quiet { border-color: transparent; }
-.btn:disabled, .btn[disabled] { transform: none; }
-.login-form .btn { min-height: 52px; font-size: 16px; }
+.btn.primary:hover, .btn--primary:hover { 
+  background: #ffc54d; 
+  border-color: transparent; 
+  opacity: 1; 
+  transform: translateY(-2px); 
+}
+.btn.danger, .btn--danger { 
+  color: var(--danger); 
+  border-color: color-mix(in srgb, var(--danger) 60%, transparent); 
+}
+.btn.danger:hover, .btn--danger:hover { 
+  border-color: var(--danger); 
+  background: color-mix(in srgb, var(--danger) 12%, transparent); 
+}
+.btn--quiet { 
+  border-color: transparent; 
+}
+.btn:disabled, .btn[disabled] { 
+  transform: none; 
+}
+.login-form .btn { 
+  min-height: 52px; 
+  font-size: 16px; 
+}
 
 /* ---------- Fields ---------- */
-input, select, textarea { color: #fff; }
+input, select, textarea { 
+  color: #fff;
+}
 .jobinfo input, .jobinfo textarea, .jobinfo select, .filters select, .addroom select, .copybox textarea,
 #addFolderForm input, .login-form input, .ws-form textarea, .ws-form input[readonly], .f input, .f textarea, .sig-box input {
   background: rgba(0, 0, 0, .34);
   border-color: var(--rule);
 }
-input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, .45); }
+input::placeholder, textarea::placeholder { 
+  color: rgba(255, 255, 255, .45); 
+}
 .login-form input:focus-visible, .ws-form textarea:focus-visible, .f input:focus-visible, .f textarea:focus-visible,
-.jobinfo input:focus-visible, .jobinfo textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.jobinfo input:focus-visible, .jobinfo textarea:focus-visible { 
+  outline: 2px solid var(--accent); 
+  outline-offset: 1px; 
+  border-color: transparent; 
+}
 /* Native dropdown lists can't be see-through, so give the options a solid dark background */
-option { background: #1c1c1c; color: #fff; }
-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .7; }
+option { 
+  background: #1c1c1c; 
+  color: #fff; 
+}
+input[type="date"]::-webkit-calendar-picker-indicator { 
+  filter: invert(1); 
+  opacity: .7; 
+}
 
 /* ---------- Text on colored fills: --sheet is see-through now, so use a solid dark color instead ---------- */
-.pill.clear, .badge-done, .role--editor { color: var(--solid); }
-.item input[type=checkbox] { background: transparent; border-color: rgba(255,255,255,.55); }
-.item input[type=checkbox]:checked::after { border-color: var(--solid); }
-.st-switch-ui::after { background: #fff; }
+.pill.clear, .badge-done, .role--editor { 
+  color: var(--solid); 
+}
+.item input[type=checkbox] { 
+  background: transparent; 
+  border-color: rgba(255,255,255,.55); 
+}
+.item input[type=checkbox]:checked::after { 
+  border-color: var(--solid); 
+}
+.st-switch-ui::after { 
+  background: #fff; 
+}
 
 /* ---------- Pop-ups: heavier glass so they still read clearly over the page ---------- */
-.sig-back { background: rgba(0, 0, 0, .65); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.sig-back { 
+  background: rgba(0, 0, 0, .65); 
+  -webkit-backdrop-filter: blur(4px); 
+  backdrop-filter: blur(4px); 
+}
 .sig-box, .st-menu-list {
   background: rgba(30, 30, 30, .72);
   border: 1px solid rgba(255, 255, 255, .14);
@@ -146,10 +288,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opaci
   backdrop-filter: blur(24px) saturate(160%);
   box-shadow: 0 20px 50px -16px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .08);
 }
-.sig-box { border-radius: 8px; }
-.toast { background: #f0b232; color: #231800; font-weight: 500; }
+.sig-box { 
+  border-radius: 8px; 
+}
+.toast { 
+  background: #f0b232; 
+  color: #231800; 
+  font-weight: 500; 
+}
 
-/* ---------- Glass: the same frosted glass as the top bar ----------
+/* ---------- Glass ----------
    Information boxes (cards, list rows, messages) and input boxes (text fields, text areas, dropdowns)
    all use the top bar's recipe: a faint white tint, a thin light edge, and a blur of whatever is behind.
    Pop-ups (signature box, menus) use a heavier glass above; the toast stays solid amber. */
@@ -160,11 +308,19 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opaci
   backdrop-filter: blur(18px) saturate(160%);
   box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
 }
-ul.jobs a:hover, .gbtn:hover { background: rgba(255, 255, 255, .10); }
+ul.jobs a:hover, .gbtn:hover { 
+  background: rgba(255, 255, 255, .10); 
+}
 /* Section links in Settings: glass highlight for hover and the current section */
-.st-toc a:hover, .st-toc a.is-active { background: rgba(255, 255, 255, .07); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+.st-toc a:hover, .st-toc a.is-active { 
+  background: rgba(255, 255, 255, .07); 
+  -webkit-backdrop-filter: blur(18px); 
+  backdrop-filter: blur(18px); 
+}
 /* Badges and letters drawn on a white fill need dark text (the tokens they used are see-through now) */
-.role--admin, .st-pic.is-letter.st-pic--logo { color: var(--solid); }
+.role--admin, .st-pic.is-letter.st-pic--logo { 
+  color: var(--solid); 
+}
 /* Every text box, text area and dropdown in the page content (not checkboxes, switches or file pickers) */
 body > :not(.fnav):not(.dock) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=hidden]), textarea, select) {
   background: rgba(255, 255, 255, .06);
@@ -181,46 +337,121 @@ body > :not(.fnav):not(.dock) :is(input:not([type=checkbox]):not([type=radio]):n
   background: rgba(255, 255, 255, .10);
 }
 /* Read-only fields (username, email, invite link) are a touch fainter so they don't look editable */
-body > :not(.fnav):not(.dock) :is(input, textarea)[readonly] { background: rgba(255, 255, 255, .03); }
+body > :not(.fnav):not(.dock) :is(input, textarea)[readonly] { 
+  background: rgba(255, 255, 255, .03); 
+}
 /* Browsers without blur support get a solid dark fill instead of a see-through one */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .login-card, .st-card, .room, ul.jobs a, .tip, .viewonly, .confirm.boxed, .st-msg, .st-result, .gbtn,
-  .sig-box, .st-menu-list,
-  body > :not(.fnav):not(.dock) :is(input, textarea, select) { background: rgba(22, 22, 22, .94); }
+  .login-card, 
+  .st-card, 
+  .room, 
+  ul.jobs a, 
+  .tip, 
+  .viewonly, 
+  .confirm.boxed, 
+  .st-msg, 
+  .st-result, 
+  .gbtn,
+  .sig-box, 
+  .st-menu-list,
+  body > :not(.fnav):not(.dock) :is(input, textarea, select) { 
+    background: rgba(22, 22, 22, .94); 
+  }
 }
 
 /* ---------- Links ---------- */
-.link, .back { color: var(--chip-ink); }
-.link:hover, .back:hover { color: #fff; }
+.link, .back { 
+  color: var(--chip-ink); 
+}
+.link:hover, .back:hover { 
+  color: #fff; 
+}
 
 /* ---------- Accessibility ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .bd-glow { animation: none; }
-  .btn, ul.jobs a { transition: none; }
-  .btn:hover, ul.jobs a:hover { transform: none; }
+  .bd-glow { 
+    animation: none; 
+  }
+  .btn, ul.jobs a { 
+    transition: none; 
+  }
+  .btn:hover, ul.jobs a:hover { 
+    transform: none; 
+  }
 }
-/* ---------- ADDED: every button uses the site look (no browser-default grey, no blue or purple text) ----------
+/* ---------- every button uses the site look (no browser-default grey, no blue or purple text) ----------
    Text-style buttons (.link: Edit, Rename, Assign, Forgot password…) become small outlined buttons, back buttons
    are soft white, and a <button> with no class at all gets the outlined .btn look. */
 :where(body > :not(.fnav):not(.dock) button:not([class]):not([role])) {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px;
-  background: transparent; color: #fff; border: 2px solid rgba(255, 255, 255, .4); border-radius: 8px;
-  font: 600 14px var(--f-body); cursor: pointer; transition: background .2s, border-color .2s;
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  min-height: 40px; 
+  padding: 0 14px;
+  background: transparent; 
+  color: #fff; 
+  border: 2px solid rgba(255, 255, 255, .4); 
+  border-radius: 8px;
+  font: 600 14px var(--f-body); 
+  cursor: pointer; 
+  transition: background .2s, border-color .2s;
 }
-:where(body > :not(.fnav):not(.dock) button:not([class]):not([role]):hover) { border-color: #fff; background: rgba(255, 255, 255, .08); }
+:where(body > :not(.fnav):not(.dock) button:not([class]):not([role]):hover) { 
+  border-color: #fff; 
+  background: rgba(255, 255, 255, .08); 
+}
 button.link {
-  display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px;
-  background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .3); border-radius: 8px;
-  font: 600 13px var(--f-body); text-decoration: none; cursor: pointer; transition: background .2s, border-color .2s;
+  display: inline-flex; 
+  align-items: center; 
+  min-height: 32px; 
+  padding: 0 12px;
+  background: transparent; 
+  color: #fff; 
+  border: 1px solid rgba(255, 255, 255, .3); 
+  border-radius: 8px;
+  font: 600 13px var(--f-body); 
+  text-decoration: none; 
+  cursor: pointer; 
+  transition: background .2s, border-color .2s;
 }
-button.link:hover { color: #fff; border-color: #fff; background: rgba(255, 255, 255, .08); }
-button.link.muted { color: rgba(255, 255, 255, .68); border-color: rgba(255, 255, 255, .18); }
-button.link.muted:hover { color: #fff; border-color: rgba(255, 255, 255, .55); }
-button.link:focus-visible, .back:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-a.link { color: #fff; text-decoration-color: var(--accent); }
-.link:hover { color: #fff; }
-.back, .np-back { color: rgba(255, 255, 255, .72); font-weight: 600; }
-.back:hover, .np-back:hover { color: var(--accent); }
-a.btn, a.btn:visited { color: #fff; }
-a.btn.primary, a.btn.primary:visited, a.btn--primary, a.btn--primary:visited { color: #231800; }
-.st-menu-item:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+button.link:hover { 
+  color: #fff; 
+  border-color: #fff; 
+  background: rgba(255, 255, 255, .08); 
+}
+button.link.muted { 
+  color: rgba(255, 255, 255, .68); 
+  border-color: rgba(255, 255, 255, .18); 
+}
+button.link.muted:hover { 
+  color: #fff; 
+  border-color: rgba(255, 255, 255, .55); 
+}
+button.link:focus-visible, .back:focus-visible { 
+  outline: 3px solid #fff; 
+  outline-offset: 2px; 
+}
+a.link { 
+  color: #fff; 
+  text-decoration-color: var(--accent); 
+}
+.link:hover { 
+  color: #fff; 
+}
+.back, .np-back { 
+  color: rgba(255, 255, 255, .72); 
+  font-weight: 600; 
+}
+.back:hover, .np-back:hover { 
+  color: var(--accent); 
+}
+a.btn, a.btn:visited { 
+  color: #fff; 
+}
+a.btn.primary, a.btn.primary:visited, a.btn--primary, a.btn--primary:visited { 
+  color: #231800; 
+}
+.st-menu-item:hover { 
+  background: rgba(255, 255, 255, .08); 
+  color: #fff; 
+}
