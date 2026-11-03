@@ -24,8 +24,8 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
-<link href="dashboard/dashboard.css?v=10" rel="stylesheet"> <!-- ADDED: the dashboard's left sidebar -->
-<link href="all-lists/list.css?v=13" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=16" rel="stylesheet"> <!-- ADDED: the dashboard's left sidebar -->
+<link href="all-lists/list.css?v=15" rel="stylesheet">
 <!-- ADDED: same as the home page. Returning signed-in users get the sidebar layout right away, with no flash of the top bar -->
 <script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 <link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet --> 
@@ -38,7 +38,7 @@
 <script src="firebase-starter/perms.js?v=1"></script> <!-- ADDED: who may do what (shared by every page) -->
 <script src="firebase-starter/legacy-data.js?v=2"></script> <!-- ADDED: brings back lists from before workspaces -->
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="all-lists/allLists.js?v=16" defer></script> <!-- CHANGED: ?v=12 makes browsers load the new version. Raise the number each time you change this file. -->
+<script src="all-lists/allLists.js?v=18" defer></script> <!-- CHANGED: ?v=12 makes browsers load the new version. Raise the number each time you change this file. -->
 <script src="dashboard/side-menu.js?v=1" defer></script> <!-- ADDED: hamburger menu on phones and iPads -->
 
 </head>
@@ -91,6 +91,19 @@
       <a class="db-logo" href="index.html#dashboard">HomeHub</a>
       <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
     </div>
+    <!-- CHANGED: the + button, same as the dashboard's: New project, New list (asks for a project and folder), New daily log -->
+    <div class="db-addrow">
+      <div class="db-add">
+        <button type="button" class="db-add-btn" id="dbAdd" aria-label="Add new" aria-haspopup="menu" aria-expanded="false" aria-controls="dbAddMenu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <div class="db-add-menu" id="dbAddMenu" role="menu">
+          <a role="menuitem" id="dbNewProj" href="new-project.html">New project</a>
+          <a role="menuitem" id="dbAddList" href="allLists.html?new=1">New list</a>
+          <span class="db-add-soon" role="menuitem" aria-disabled="true">New daily log <span class="soon">Soon</span></span>
+        </div>
+      </div>
+    </div>
     <div class="db-jobs">
       <label for="dbJob">Project</label>
       <div class="db-select">
@@ -98,7 +111,6 @@
           <option value="">All projects</option>
         </select>
       </div>
-      <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-project.html">New project</a>
     </div>
   <nav class="db-nav" aria-label="Workspace sections">
     <a href="index.html#dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
@@ -225,6 +237,13 @@
   </div>
 </div>
   </div><!-- /.db-main -->
+  <!-- ADDED: floating Home button, phones and iPads only (same as the dashboard) -->
+  <nav class="db-dock db-glass" aria-label="Home">
+    <a class="db-dock-home" href="index.html#dashboard">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20"/></svg>
+      <span>Home</span>
+    </a>
+  </nav>
 </div><!-- /.db -->
 <!-- ADDED: signature box. Opens when someone checks an item off; the item is only marked done after they type their name and sign. -->
 <div class="sig-back" id="sigBack" hidden>
@@ -237,6 +256,19 @@
     <canvas id="sigPad" aria-label="Sign here with your finger or mouse"></canvas>
     <p class="sig-err" id="sigErr" hidden></p>
     <div class="acts"><button type="button" class="btn" id="sigCancel">Cancel</button><button type="button" class="btn primary" id="sigOk">Sign &amp; mark done</button></div>
+  </div>
+</div>
+<!-- ADDED: "New punch list" box. Opens when someone picks New list from the + menu in the left sidebar, so they can choose a project and a folder.
+     (From a project page, the list goes straight into that project and this box is skipped.) -->
+<div class="sig-back" id="nlBack" hidden>
+  <div class="sig-box" role="dialog" aria-modal="true" aria-labelledby="nlTitle">
+    <h2 id="nlTitle">New punch list</h2>
+    <label for="nlProject">Project</label>
+    <select id="nlProject"></select>
+    <label for="nlFolder">Folder</label>
+    <select id="nlFolder"></select>
+    <p class="sig-item" id="nlNote" hidden></p>
+    <div class="acts"><button type="button" class="btn" id="nlCancel">Cancel</button><button type="button" class="btn primary" id="nlOk">Create list</button></div>
   </div>
 </div>
 <!-- Small popup message, shown briefly by toast() -->

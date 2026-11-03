@@ -1014,3 +1014,13 @@ ul.jobs .fproj-note a.fproj-name:hover { color: var(--accent); text-decoration: 
   border: 1px solid rgba(0, 0, 0, .18);
   border-radius: 6px;
 }
+
+/* ---------- ADDED: "New punch list" box (project and folder pickers), shares the signature pop-up's look ---------- */
+.sig-box select { width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); }
+
+/* ---------- ADDED: floating Home button on the list page: signed-in people on phones and iPads only (dashboard.css draws it) ---------- */
+.page-lists .db-dock { display: none; }
+@media (max-width: 1024px) {
+  :is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .db-dock { display: block; }
+  :is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); } /* sit above the Home button */
+}

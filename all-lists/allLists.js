@@ -250,6 +250,7 @@ function loadProjects() {
     projectsLoaded = true;
     syncFolderProjects();
     renderJobs();
+    refreshNewListChoices(); // ADDED: if the New punch list box is open, add the projects to it
     renderSide(); // ADDED: fill the sidebar's project picker
   }).catch(e => console.error("Couldn't load projects:", e));
 }
@@ -294,12 +295,22 @@ function renderSide() {
   if (sel.value !== focus) sel.value = "";
   document.getElementById("dbNewProj").hidden = !perm.createProjects; // CHANGED: needs "Create projects"
 }
+// CHANGED: picking a project opens that project's own dashboard (the dashboard no longer has a focus mode)
 document.getElementById("dbJob").addEventListener("change", e => {
-  try { 
-    e.target.value ? sessionStorage.setItem("hh-focus", e.target.value) : sessionStorage.removeItem("hh-focus"); 
-  } catch (ex) {}
-  location.href = "index.html#dashboard";
+  location.href = "index.html" + (e.target.value ? "#projects/" + encodeURIComponent(e.target.value) : "#dashboard");
 });
+// ADDED: the + menu in the sidebar (same as the dashboard): New project, New list (asks for project and folder), New daily log (soon)
+const navAddBtn = document.getElementById("dbAdd"), navAddMenu = document.getElementById("dbAddMenu");
+function toggleNavAdd(open) {
+  const on = open === undefined ? !navAddMenu.classList.contains("is-open") : open;
+  navAddMenu.classList.toggle("is-open", on);
+  navAddBtn.setAttribute("aria-expanded", String(on));
+}
+navAddBtn.addEventListener("click", e => { e.stopPropagation(); toggleNavAdd(); });
+document.addEventListener("click", e => { if (!navAddMenu.contains(e.target)) toggleNavAdd(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") toggleNavAdd(false); });
+navAddMenu.addEventListener("click", () => toggleNavAdd(false));
+document.getElementById("dbAddList").addEventListener("click", e => { e.preventDefault(); openNewListDialog(); }); // no page reload: open the box right here
 // Does this project still exist? (Before the projects have loaded, assume yes.)
 const projectExists = pid => !!pid && (!projectsLoaded || !!projectNames[pid]);
 // The project a folder belongs to: its own, or else the nearest folder above it that has one. "" = none.
@@ -1044,6 +1055,7 @@ function applyFolders() {
     .map(([id, p]) => `<option value="${esc(id)}">${esc(p)}</option>`).join("");
   sel.value = foldersList[state.meta.folderId] ? state.meta.folderId : "";
   renderJobs();
+  refreshNewListChoices(); // ADDED: if the New punch list box is open, add the folders to it
 }
 
 // ================= EVENTS =================
@@ -1239,6 +1251,60 @@ function createJob(folderId, projectId) { // projectId: the project this punch l
   setTimeout(() => document.getElementById("jCommunity").focus(), 50); // jump straight to the Community field
 }
 document.getElementById("newJob").addEventListener("click", () => createJob(""));
+
+// ADDED: "New list" from the + menu in the left sidebar asks which project and which folder the list goes in.
+// (From a project page the list goes straight into that project, so this box is skipped there.)
+function refreshNewListChoices() { // fills both dropdowns; also called when projects or folders finish loading while the box is open
+  const back = document.getElementById("nlBack");
+  if (!back || back.hidden) return;
+  const pSel = document.getElementById("nlProject"), fSel = document.getElementById("nlFolder");
+  const keepP = pSel.value, keepF = fSel.value;
+  const pids = Object.keys(projectNames).sort((a, b) => projectNames[a].localeCompare(projectNames[b], undefined, { sensitivity: "base" }));
+  pSel.innerHTML = `<option value="">No project</option>` + pids.map(id => `<option value="${esc(id)}">${esc(projectNames[id])}</option>`).join("");
+  fSel.innerHTML = `<option value="">No folder</option>` + Object.keys(foldersList).filter(id => !foldersList[id].archived).map(id => [id, folderPath(id)])
+    .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: "base" }))
+    .map(([id, path]) => `<option value="${esc(id)}">${esc(path)}</option>`).join("");
+  pSel.value = keepP; if (pSel.value !== keepP) pSel.value = "";
+  fSel.value = keepF; if (fSel.value !== keepF) fSel.value = "";
+  updateNewListNote();
+}
+// Explains what a folder choice means for the project
+function updateNewListNote() {
+  const note = document.getElementById("nlNote");
+  const fid = document.getElementById("nlFolder").value, pid = document.getElementById("nlProject").value;
+  const fp = fid ? projectOfFolder(fid) : "";
+  let text = "";
+  if (fp && projectNames[fp] && !pid) text = "This folder is part of " + projectNames[fp] + ", so the list will join that project.";
+  else if (fp && projectNames[fp] && pid && pid !== fp) text = "This folder is part of " + projectNames[fp] + ", but the list will stay in the project you picked.";
+  note.textContent = text;
+  note.hidden = !text;
+}
+function openNewListDialog() {
+  // Not signed in, no workspace, or no permission: createJob explains (or redirects) the same way it always has
+  if (fs && (!uid || !wid)) return createJob("", "");
+  if (!canEdit) return createJob("", "");
+  document.getElementById("nlBack").hidden = false;
+  refreshNewListChoices();
+  document.getElementById("nlProject").focus();
+}
+function closeNewListDialog() { document.getElementById("nlBack").hidden = true; }
+document.getElementById("nlFolder").addEventListener("change", () => {
+  // Choosing a folder that belongs to a project picks that project too (unless one is already chosen)
+  const fid = document.getElementById("nlFolder").value, fp = fid ? projectOfFolder(fid) : "";
+  const pSel = document.getElementById("nlProject");
+  if (fp && projectNames[fp] && !pSel.value) pSel.value = fp;
+  updateNewListNote();
+});
+document.getElementById("nlProject").addEventListener("change", updateNewListNote);
+document.getElementById("nlOk").addEventListener("click", () => {
+  const pid = document.getElementById("nlProject").value, fid = document.getElementById("nlFolder").value;
+  closeNewListDialog();
+  createJob(fid, pid); // makes the list in that folder and project and opens it
+});
+const nlCancel = () => { closeNewListDialog(); route(); };
+document.getElementById("nlCancel").addEventListener("click", nlCancel);
+document.getElementById("nlBack").addEventListener("click", e => { if (e.target.id === "nlBack") nlCancel(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.getElementById("nlBack").hidden) nlCancel(); });
 // ADDED: "New folder" button shows or hides the name form
 document.getElementById("newFolder").addEventListener("click", () => {
   if (!needEdit()) return; // ADDED
@@ -1921,7 +1987,8 @@ function boot() {
   if (new URLSearchParams(location.search).get("new") === "1") {
     const projectId = new URLSearchParams(location.search).get("project") || ""; // ADDED: "New punch list" on a project page
     history.replaceState(null, "", location.pathname); // clear ?new=1 so a refresh doesn't make another list
-    createJob("", projectId);                          // makes the list, adds it to All Lists, and opens it
+    if (projectId) createJob("", projectId);           // from a project page: the list goes straight into that project
+    else { route(); openNewListDialog(); }             // CHANGED: from the left menu's + button: ask which project and folder first
   } else {
     route();
   }

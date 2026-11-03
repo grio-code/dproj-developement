@@ -276,3 +276,7 @@ a.btn { text-decoration: none; }
   .st-people li .st-menu .btn { width: 100%; }
   h1 { font-size: 34px; }
 }
+
+/* ---------- ADDED: on the settings page, "Hello, Name" sits on the right, next to the buttons, instead of in the middle ---------- */
+.page-settings .fnav { grid-template-columns: minmax(0, 1fr) auto auto; }
+.page-settings .fnav-center { justify-content: flex-end; }
