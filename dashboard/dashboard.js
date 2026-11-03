@@ -1,32 +1,4 @@
 // ©HomeHub LLC 2026
-
-// Workspace dashboard: what index.html shows once someone is signed in.
-//
-// Projects hold punch lists. A project is made on new-project.html; its punch lists are jobs with projectId set,
-// and a project's progress is all of its punch lists added together.
-//
-// Left column:  the + (new project / list / daily log), Jobs / Templates, the Open / Warranty / Closed toggle and the projects
-//               themselves (each project's features live on its own page), then Settings.
-// Dashboard:    greeting with today's weather, a one-line summary, workspace facts, Needs your attention (coming soon),
-//               Recent activity and This week's agenda (coming soon).
-// Projects:     a card per project (index.html#projects), punch lists not in a project yet,
-//               and one project's page with its details, timeline, punch lists and daily logs.
-//
-// Firestore data:
-//   users/{uid}/profile/info                 name, workspaceId
-//   workspaces/{wid}                         name, ownerId
-//   workspaces/{wid}/members/{uid}           displayName, email, canEdit, admin
-//   projects (workspaceId == wid)            name, community, lot, address, description, date, startDate, endDate, phases, createdAt, updatedAt,
-//                                            status ('open' | 'warranty' | 'closed'; missing = 'open'), archived, archivedAt
-//   jobs (workspaceId == wid)                the punch lists: projectId, lot, community, description, openCount, totalCount, createdAt, updatedAt, archived
-//   jobs/{id}/custom/{itemId}                text, room, trade, createdAt         (the punch items)
-//   jobs/{id}/items/{itemId}                 done, doneAt, signedBy, trade        (their status)
-//   jobs/{id}/rooms/{roomId}                 name
-//   jobs/{id}/hidden/{roomId}                hidden
-// Writes: "Move to project" for a punch list that isn't in a project yet (jobs/{id}.projectId), a project's stage (editors),
-// "Archive project" (editors) and "Delete project" (admins only).
-// Editing a project happens on new-project.html?edit={id}.
-// Weather comes from Open-Meteo (free, no key), using the browser's location.
 (() => {
   'use strict';
   if (!window.firebase) return;
@@ -284,7 +256,7 @@
   function renderAll() {
     const a = analyze();
     // One section failing (say, a panel missing from index.html) must not stop the others, Projects included
-    [renderSide, renderBrief, renderFacts, renderFeed, renderProjects].forEach(fn => {
+    [renderSide, renderBrief, renderFacts, renderFeed, renderLoose].forEach(fn => {
       try { fn(a); } catch (ex) { console.error(fn.name + ' failed:', ex); }
     });
     route();
@@ -293,13 +265,17 @@
   // Sidebar: the projects in the stage picked with Open / Warranty / Closed. Each links to that project's page.
   function renderSide(a) {
     $('dbAddProject').hidden = !st.perm.createProjects;
-    renderStageBar(a.projects);
+    // Search by name, lot, community, address or the name of one of its punch lists. The counts on Open / Warranty / Closed follow the search.
+    const q = ($('projSearch').value || '').trim().toLowerCase();
+    const found = !q ? a.projects : a.projects.filter(x => [projName(x.p), x.p.address, x.p.community, x.p.lot, ...(x.p._lists || []).map(listTitle)].join(' ').toLowerCase().includes(q));
+    renderStageBar(found);
     const ul = $('dbSideProjects');
     ul.textContent = '';
-    const list = a.projects.filter(x => stageOf(x.p) === st.stage);
+    const list = found.filter(x => stageOf(x.p) === st.stage);
     if (!list.length) {
       ul.appendChild(el('li', 'db-empty', st.projectsFailed ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.'
         : !a.projects.length ? (st.perm.createProjects ? 'No projects yet. Use + to create one.' : 'No projects yet.')
+        : q ? 'No ' + stageName(st.stage).toLowerCase() + ' projects match “' + q + '”.' + (found.length ? ' Try another tab.' : '')
         : 'No ' + stageName(st.stage).toLowerCase() + ' projects.'));
       return;
     }
@@ -529,44 +505,12 @@
     : !c.total ? plural(c.lists, 'punch list') + ', no items yet'
     : (c.open ? plural(c.open, 'open item') + ' of ' + c.total : 'All ' + c.total + ' items signed off') + ' across ' + plural(c.lists, 'punch list');
 
-  // ---------- Projects (My Projects) ----------
-  function renderProjects(a) {
-    $('newProject').hidden = !st.perm.createProjects;
-    const q = ($('projSearch').value || '').trim().toLowerCase();
-    const grid = $('dbProjects');
-    grid.textContent = '';
-    const match = (...xs) => !q || xs.join(' ').toLowerCase().includes(q);
-    // CHANGED: only the projects in the stage picked at the top (Open, Warranty or Close) are shown
-    const found = a.projects.filter(x => match(projName(x.p), x.p.address, x.p.community, x.p.lot, ...(x.p._lists || []).map(listTitle)));
-    const shown = found.filter(x => stageOf(x.p) === st.stage);
-    if (st.projectsFailed) grid.appendChild(el('p', 'db-empty', 'Projects couldn’t load: permission denied. Republish the Firestore rules (they now include projects), then refresh.'));
-    else if (!shown.length) grid.appendChild(el('p', 'db-empty',
-      !a.projects.length ? (st.perm.createProjects ? 'No projects yet. Use New project to create your first one.' : 'No projects yet.')
-      : q ? 'No ' + st.stage + ' projects match “' + q + '”.'
-      : st.stage === 'open' ? 'No open projects.'
-      : st.stage === 'warranty' ? 'No projects are under warranty. Move a project here from its page when it’s handed over.'
-      : 'No closed projects. Close a project from its page once its warranty is done.'));
-    shown.forEach(x => {
-      const card = link(projUrl(x.p.id), 'db-proj db-glass');
-      const tag = stageOf(x.p) !== 'open' ? el('span', 'db-tag is-' + stageOf(x.p), stageOf(x.p) === 'warranty' ? 'Under warranty' : 'Closed')
-        : !x.lists ? el('span', 'db-tag', 'No punch lists yet')
-        : x.total === 0 ? el('span', 'db-tag', 'No items yet')
-        : x.open === 0 ? el('span', 'db-tag is-done', 'Signed off')
-        : el('span', 'db-tag is-open', plural(x.open, 'open item'));
-      const stat = el('div', 'stat');
-      const left = el('span');
-      if (x.total) left.append(el('b', null, x.pct + '%'), document.createTextNode(' done')); else left.textContent = plural(x.lists, 'punch list');
-      stat.append(left, el('span', null, x.p._last ? 'Updated ' + ago(x.p._last) : ''));
-      const where = [x.p.address, [x.p.lot && 'Lot ' + x.p.lot, x.p.community].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-      card.append(tag, el('h3', null, projName(x.p)), el('div', 'where', where || 'No address yet'),
-        tape(x.pct, x.total > 0 && x.open === 0, 'Progress'), stat);
-      grid.appendChild(card);
-    });
-
+  // ---------- Punch lists not in a project (on the dashboard) ----------
+  function renderLoose(a) {
     // Punch lists made before projects existed (or whose project was removed): list them so they can be moved into one
     const box = $('dbLoose');
     box.textContent = '';
-    const loose = st.loose.filter(j => match(listTitle(j), j.address, j.community, j.lot));
+    const loose = st.loose;
     box.hidden = !loose.length;
     if (!loose.length) return;
     const h = el('div', 'db-panel-h');
@@ -584,7 +528,7 @@
     });
     box.appendChild(ul);
   }
-  $('projSearch').addEventListener('input', () => renderProjects(analyze()));
+  $('projSearch').addEventListener('input', () => renderSide(analyze()));
 
   // The Open / Warranty / Closed buttons in the sidebar, each with how many projects it holds
   function renderStageBar(found) {
@@ -650,7 +594,7 @@
     st.projects = st.projects.filter(x => x.id !== p.id);
     if (st.focus === p.id) { st.focus = ''; try { sessionStorage.removeItem('hh-focus'); } catch (e) {} }
     link_();
-    location.hash = '#projects';
+    location.hash = '#dashboard';
     renderAll();
     toast('Archived “' + projName(p) + '”. Find it in Settings, under Archive.');
   }
@@ -881,7 +825,7 @@
     const box = $('projDetail');
     box.textContent = '';
     const p = st.projects.find(x => x.id === id);
-    box.appendChild(link('#projects', 'db-back', '‹ My projects'));
+    box.appendChild(link('#dashboard', 'db-back', '‹ Dashboard'));
     if (!p) { box.appendChild(el('p', 'db-empty', st.loaded ? 'That project was not found. It may have been deleted.' : 'Loading…')); return; }
     const c = projCounts(p);
     const newList = 'allLists.html?new=1&project=' + encodeURIComponent(p.id);
@@ -944,21 +888,40 @@
       panels.appendChild(pn);
       return [b, pn];
     };
+    // The project's features. Only punch lists are built so far; the others are placeholders.
     const [tLists, pLists] = mk('lists', 'Punch lists (' + c.lists + ')');
-    const [tLogs, pLogs] = mk('logs', 'Daily logs');
+    const FEATURES = [
+      ['logs', 'Daily logs', 'M8.5 8h7M8.5 12h7M8.5 16h4', 'Record weather, crew on site, deliveries and progress photos for this project each day.', '<rect x="5" y="3.5" width="14" height="17" rx="2"/>'],
+      ['schedule', 'Schedule', 'M3.5 10h17M8 3v4M16 3v4', 'Plan this project’s phases and trade visits on one calendar, so everyone knows who’s on site and when.', '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/>'],
+      ['selections', 'Selections', 'M13 6.5h7.5M3.5 17.5H11', 'Track the finishes, fixtures and colors the buyer picks for this project, and get approvals before work starts.', '<circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/>'],
+      ['files', 'Files', '', 'Documents, images and uploads for this project.', '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>'],
+      ['messages', 'Messages', '', 'Talk with your crew, trades and buyers about this project in one place.', '<path d="M4 5.5h16v10H9l-5 4z"/>']
+    ];
+    const pairs = [[tLists, pLists, 'lists']];
+    FEATURES.forEach(([key, label, extra, text, shapes]) => {
+      const [b, pn] = mk(key, label);
+      pairs.push([b, pn, key]);
+      if (key === 'files') { pn.appendChild(filesDrop()); return; }
+      const soon = el('div', 'db-soon db-glass');
+      soon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + shapes + (extra ? '<path d="' + extra + '"/>' : '') + '</svg>';
+      soon.append(el('span', 'db-pill', 'Coming soon'), el('h3', null, label), el('p', null, text));
+      pn.appendChild(soon);
+    });
     const select = which => {
-      [[tLists, pLists], [tLogs, pLogs]].forEach(([b, pn]) => {
+      pairs.forEach(([b, pn, key]) => {
         const on = b === which;
         b.setAttribute('aria-selected', String(on));
         b.tabIndex = on ? 0 : -1;
         pn.hidden = !on;
+        if (on) { st.tab = key; st.tabFor = p.id; } // stay on this tab when the page redraws
       });
     };
-    tLists.addEventListener('click', () => select(tLists));
-    tLogs.addEventListener('click', () => select(tLogs));
+    pairs.forEach(([b]) => b.addEventListener('click', () => select(b)));
     tabs.addEventListener('keydown', e => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      const to = document.activeElement === tLists ? tLogs : tLists;
+      const i = pairs.findIndex(x => x[0] === document.activeElement);
+      if (i < 0) return;
+      const to = pairs[(i + (e.key === 'ArrowRight' ? 1 : pairs.length - 1)) % pairs.length][0];
       select(to); to.focus();
     });
 
@@ -1027,15 +990,9 @@
     const mg = manageBox(p);
     if (mg) pLists.appendChild(mg);
 
-    // Daily logs tab: placeholder until the feature is built
-    const soon = el('div', 'db-soon db-glass');
-    soon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>';
-    soon.append(el('span', 'db-pill', 'Coming soon'), el('h3', null, 'Daily logs'),
-      el('p', null, 'Record weather, crew on site, deliveries and progress photos for this project each day.'));
-    pLogs.appendChild(soon);
-
     box.append(tabs, panels);
-    select(tLists);
+    const keep = st.tabFor === p.id ? pairs.find(x => x[2] === st.tab) : null;
+    select(keep ? keep[0] : tLists);
 
     // ADDED: Archive and Delete, at the bottom of the project's page
     // CHANGED: shown to admins and members with "Edit, archive and delete projects"
@@ -1057,19 +1014,15 @@
   }
 
   // ---------- Sections (from the address) ----------
-  const VIEWS = ['dashboard', 'projects', 'dailylogs', 'schedule', 'files', 'selections', 'messages'];
+  const VIEWS = ['dashboard', 'projects'];
   function route() {
     const h = decodeURIComponent(location.hash.slice(1));
     let [view, sub] = h.split('/');
-    if (!VIEWS.includes(view)) { sub = ''; view = 'dashboard'; } // #next, #activity... are spots on the dashboard
+    if (!VIEWS.includes(view) || (view === 'projects' && !sub)) { sub = ''; view = 'dashboard'; } // old links (#projects, #files...) land on the dashboard
     VIEWS.forEach(v => { const panel = document.getElementById('v-' + v); if (panel) { panel.hidden = v !== view; panel.style.display = v === view ? 'block' : 'none'; } });
     root.querySelectorAll('.db-nav a').forEach(a => a.dataset.view === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
     markSide();
-    if (view === 'projects') {
-      $('projList').hidden = !!sub;
-      $('projDetail').hidden = !sub;
-      if (sub) renderDetail(sub);
-    }
+    if (view === 'projects') renderDetail(sub);
   }
   let lastView = '';
   window.addEventListener('hashchange', () => {
@@ -1170,13 +1123,20 @@
     else if (state !== 'denied') weatherButton();          // ask only when they choose to
   }
 
-  // ---------- Files placeholder ----------
-  const drop = $('dbDrop');
-  const fileSoon = () => toast('Uploading files is coming soon.');
-  $('dbFile').addEventListener('change', e => { if (e.target.files.length) fileSoon(); e.target.value = ''; });
-  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('is-over'); }));
-  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('is-over'); }));
-  drop.addEventListener('drop', fileSoon);
+  // ---------- Files tab (on each project's page): a placeholder drop zone until storage is built ----------
+  function filesDrop() {
+    const lab = el('label', 'db-drop');
+    lab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
+    const input = el('input');
+    input.type = 'file'; input.accept = 'image/*';
+    lab.append(el('b', null, 'Upload an image'), el('span', null, 'Drag a photo here or choose one. File storage is coming soon.'), input);
+    const soon = () => toast('Uploading files is coming soon.');
+    input.addEventListener('change', () => { if (input.files.length) soon(); input.value = ''; });
+    ['dragenter', 'dragover'].forEach(t => lab.addEventListener(t, e => { e.preventDefault(); lab.classList.add('is-over'); }));
+    ['dragleave', 'drop'].forEach(t => lab.addEventListener(t, e => { e.preventDefault(); lab.classList.remove('is-over'); }));
+    lab.addEventListener('drop', soon);
+    return lab;
+  }
 
   // ---------- Start ----------
   route();

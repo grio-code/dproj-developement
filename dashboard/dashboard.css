@@ -565,3 +565,24 @@ a.db-btn--main, a.db-btn--main:visited { color: var(--amber-ink); }
 .db-folder-h b { flex: 1 1 auto; font-size: 16px; overflow-wrap: anywhere; }
 .db-folder-h small { color: var(--muted); }
 .db-folder-in { margin-left: 16px; padding-left: 12px; border-left: 2px solid rgba(255, 255, 255, .18); }
+
+/* Search under Open / Warranty / Closed in the sidebar */
+.db-side-search { display: block; margin: 0 6px 10px; }
+.db-side-search input {
+  width: 100%; min-height: 38px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--edge);
+  background: rgba(255, 255, 255, .06); color: #fff; font: 500 14px var(--f-body);
+}
+.db-side-search input::placeholder { color: var(--faint); }
+.db-side-search input:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; border-color: transparent; }
+
+/* "New daily log" in the + menu isn't built yet (daily logs live on each project's page) */
+.db-add-menu .db-add-soon { display: flex; align-items: center; gap: 8px; padding: 10px 12px; color: var(--faint); font: 500 14px var(--f-body); cursor: default; }
+.db-add-menu .db-add-soon .soon { margin-left: auto; font-size: 11px; }
+
+/* A project's feature tabs (Punch lists, Daily logs, Schedule, Selections, Files, Messages): scroll sideways when they don't fit */
+.db-tabs[role="tablist"] { overflow-x: auto; scrollbar-width: none; }
+.db-tabs[role="tablist"]::-webkit-scrollbar { display: none; }
+.db-tabs[role="tablist"] button { flex: none; white-space: nowrap; }
+
+/* Punch lists not in a project, now at the bottom of the dashboard */
+.db-loose-box { margin-top: 20px; }
