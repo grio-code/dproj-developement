@@ -24,22 +24,21 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
-<link href="dashboard/dashboard.css?v=16" rel="stylesheet"> <!-- ADDED: the dashboard's left sidebar -->
+<link href="dashboard/dashboard.css?v=16" rel="stylesheet"> <!-- the dashboard's left sidebar -->
 <link href="all-lists/list.css?v=15" rel="stylesheet">
-<!-- ADDED: same as the home page. Returning signed-in users get the sidebar layout right away, with no flash of the top bar -->
 <script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 <link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet --> 
 <!-- Firebase libraries (compat build) and your project settings. These must load BEFORE allLists.js -->
-<!-- CHANGED: these were listed twice; each one now loads once, in the same order as the other pages -->
+<!--  these were listed twice; each one now loads once, in the same order as the other pages -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-starter/firebase-config.js"></script>
-<script src="firebase-starter/perms.js?v=1"></script> <!-- ADDED: who may do what (shared by every page) -->
-<script src="firebase-starter/legacy-data.js?v=2"></script> <!-- ADDED: brings back lists from before workspaces -->
+<script src="firebase-starter/perms.js?v=1"></script>
+<script src="firebase-starter/legacy-data.js?v=2"></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="all-lists/allLists.js?v=18" defer></script> <!-- CHANGED: ?v=12 makes browsers load the new version. Raise the number each time you change this file. -->
-<script src="dashboard/side-menu.js?v=1" defer></script> <!-- ADDED: hamburger menu on phones and iPads -->
+<script src="all-lists/allLists.js?v=18" defer></script> <
+<script src="dashboard/side-menu.js?v=1" defer></script> 
 
 </head>
 <body class="page-lists"> <!-- ADDED: page-lists turns on the sidebar layout in list.css -->
@@ -72,10 +71,10 @@
   </div>
 </header>
 
-<!-- ADDED: the dashboard's left sidebar, so My Lists sits in the same layout as Dashboard and My projects.
+<!-- the dashboard's left sidebar, so My Lists sits in the same layout as Dashboard and My projects.
      Shown to signed-in people only; guests opening a shared link get the top bar instead. allLists.js fills in the workspace and project picker. -->
 <div class="db" id="db">
-  <!-- ADDED: phone and iPad bar. The sidebar below becomes a slide-out menu opened with this button (see dashboard/side-menu.js) -->
+  <!--  phone and iPad bar. The sidebar below becomes a slide-out menu opened with this button (see dashboard/side-menu.js) -->
   <div class="db-mbar db-glass">
     <button type="button" class="db-burger" id="dbBurger" aria-controls="dbSide" aria-expanded="false" aria-label="Open menu">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -91,7 +90,7 @@
       <a class="db-logo" href="index.html#dashboard">HomeHub</a>
       <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
     </div>
-    <!-- CHANGED: the + button, same as the dashboard's: New project, New list (asks for a project and folder), New daily log -->
+    <!-- the + button, same as the dashboard's: New project, New list (asks for a project and folder), New daily log -->
     <div class="db-addrow">
       <div class="db-add">
         <button type="button" class="db-add-btn" id="dbAdd" aria-label="Add new" aria-haspopup="menu" aria-expanded="false" aria-controls="dbAddMenu">
@@ -131,7 +130,7 @@
   <!-- ===== SCREEN 1: Jobs list (home). Hidden/shown by JS. ===== -->
   <div id="jobsView" hidden>
     <div class="titlebar">
-      <!-- CHANGED: small label above the title and a short intro under it, like the Settings and New project pages -->
+      <!-- a small label above the title and a short intro under it, like the Settings and New project pages -->
       <div class="eyebrow">Punch lists</div>
       <h1>My Lists</h1>
       <p class="lede">Every punch list in your workspace. Group them into folders. A folder that holds a project's list joins that project.</p>
@@ -140,16 +139,16 @@
     <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-starter/firebase-config.js</b> to share them.</div>
     <div class="tools" style="margin-top:16px">
       <button type="button" class="btn primary edit-only" id="newJob">New list</button>
-      <!-- ADDED: button that shows/hides the "create a folder" form below -->
+      <!-- button that shows/hides the "create a folder" form below -->
       <button type="button" class="btn edit-only" id="newFolder">New folder</button>
       <span class="saved" id="jobsSaved"></span>
     </div>
-    <!-- ADDED: form for naming a new folder. Hidden until "New folder" is tapped. -->
+    <!-- form for naming a new folder. Hidden until "New folder" is tapped. -->
     <form id="addFolderForm" hidden>
       <input id="newFolderName" type="text" maxlength="40" placeholder="Folder name" aria-label="New folder name">
       <button class="btn primary" type="submit">Create</button>
     </form>
-    <!-- ADDED: small tip about dragging. Shown by renderJobs() only when there is at least one folder and one list. -->
+    <!-- small tip about dragging. Shown by renderJobs() only when there is at least one folder and one list. -->
     <p class="when" id="dragHint" style="margin:12px 0 0" hidden>Tip: press and hold a list or a folder, then drag it onto a folder.</p>
     <!-- Filled in by renderJobs() -->
     <ul class="jobs" id="jobs"></ul>
@@ -167,7 +166,6 @@
       <div class="row1">
         <div>
           <!-- <div class="eyebrow">Modern Haven Homes</div> -->
-          <!-- CHANGED: this heading used to just say "Punch List". It now has an id so the script can fill it with "Community - Lot" from the job info fields below. -->
           <h1 id="jobTitle"> New List</h1>
         </div>
         <!-- Live count of open items; updated by render() -->
@@ -180,9 +178,9 @@
       <div class="f w2"><label for="jCommunity">Community</label><input id="jCommunity" type="text" maxlength="60" data-meta="community" placeholder="Community name"></div>
       <div class="f w2"><label for="jAddress">Address</label><input id="jAddress" type="text" maxlength="100" data-meta="address" placeholder="Street address"></div>
       <div class="f"><label for="jLot">Lot #</label><input id="jLot" type="text" maxlength="20" data-meta="lot" placeholder="Lot"></div>
-      <!-- ADDED: free-text description of the job, under Address and Lot #. Saves like the other fields through data-meta. -->
+      <!-- free-text description of the job, under Address and Lot #. Saves like the other fields through data-meta. -->
       <div class="f desc"><label for="jDesc">Description</label><textarea id="jDesc" rows="2" maxlength="1000" data-meta="description" placeholder="Notes about this job, like scope, access or gate code"></textarea></div>
-      <!-- ADDED: choose which folder this list lives in. Options are filled in by applyFolders(). It has no data-meta attribute because it saves through its own change listener. -->
+      <!-- choose which folder this list lives in. Options are filled in by applyFolders(). It has no data-meta attribute because it saves through its own change listener. -->
       <div class="f full edit-only"><label for="jFolder">Folder</label><select id="jFolder" aria-label="Folder"></select></div>
     </div>
     <!-- Sticky header: progress bar, filters, and toolbar -->
@@ -193,15 +191,13 @@
         <select id="showF" aria-label="Show"><option value="all">All items</option><option value="open">Open items</option><option value="done">Completed</option></select>
         <!-- Filter by trade; options are filled in by applyTrades() -->
         <select id="tradeF" aria-label="Trade"></select>
-        <!-- ADDED: filter by who items are assigned to; options are filled in by applyWhoFilter() -->
+        <!-- filter by who items are assigned to; options are filled in by applyWhoFilter() -->
         <select id="whoF" aria-label="Assigned to" hidden></select>
       </div>
       <div class="tools">
         <button type="button" class="btn" id="linkBtn">Send link</button>
-        <!-- REMOVED: the "Copy list for subs" button (id="copyBtn") was here -->
-        <!-- ADDED: makes a copy of this list (rooms, items, trades, notes) with nothing checked off -->
+        <!-- makes a copy of this list (rooms, items, trades, notes) with nothing checked off -->
         <button type="button" class="btn edit-only" id="dupJob">Duplicate list</button>
-        <!-- REMOVED: the "Archive list" button. Archiving now happens on a project's page. -->
         <button type="button" class="btn edit-only" id="tradesBtn">Edit levels &amp; trades</button>
         <span class="saved" id="saved">Loading…</span>
       </div>
@@ -212,8 +208,8 @@
     </header>
 
     <!-- Form to add a new room to this list and choose which level it belongs to -->
-    <!-- ADDED: shown to people who can only check items off (see applyPerms in allLists.js) -->
-    <!-- ADDED (data safety): shown on a list from before workspaces, which doesn't appear in My Lists yet -->
+    <!-- shown to people who can only check items off (see applyPerms in allLists.js) -->
+    <!-- (data safety): shown on a list from before workspaces, which doesn't appear in My Lists yet -->
     <div class="viewonly legacy" id="legacyBanner" hidden>This list is from before workspaces, so it doesn't show in My Lists yet.
       <button type="button" class="btn primary" id="legacyClaim">Move into my workspace</button></div>
     <p class="viewonly" id="viewOnly" hidden>You can check items off this list. Ask a workspace admin if you need access to add or change things.</p>
@@ -226,7 +222,7 @@
     <!-- All the room cards get rendered into this element by render() -->
     <main id="rooms"></main>
 
-    <!-- CHANGED (data safety): this archives the list instead of deleting it. Deleting for good happens only in Settings > Archive. -->
+    <!-- (data safety): this archives the list instead of deleting it. Deleting for good happens only in Settings > Archive. -->
     <div class="danger-zone edit-only" id="dangerZone">
       <button type="button" class="link muted" id="askDelJob">Archive this list</button>
     </div>
@@ -237,7 +233,7 @@
   </div>
 </div>
   </div><!-- /.db-main -->
-  <!-- ADDED: floating Home button, phones and iPads only (same as the dashboard) -->
+  <!-- floating Home button, phones and iPads only (same as the dashboard) -->
   <nav class="db-dock db-glass" aria-label="Home">
     <a class="db-dock-home" href="index.html#dashboard">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20"/></svg>
@@ -245,7 +241,7 @@
     </a>
   </nav>
 </div><!-- /.db -->
-<!-- ADDED: signature box. Opens when someone checks an item off; the item is only marked done after they type their name and sign. -->
+<!-- signature box. Opens when someone checks an item off; the item is only marked done after they type their name and sign. -->
 <div class="sig-back" id="sigBack" hidden>
   <div class="sig-box" role="dialog" aria-modal="true" aria-labelledby="sigTitle">
     <h2 id="sigTitle">Sign to mark done</h2>
@@ -258,7 +254,7 @@
     <div class="acts"><button type="button" class="btn" id="sigCancel">Cancel</button><button type="button" class="btn primary" id="sigOk">Sign &amp; mark done</button></div>
   </div>
 </div>
-<!-- ADDED: "New punch list" box. Opens when someone picks New list from the + menu in the left sidebar, so they can choose a project and a folder.
+<!-- "New punch list" box. Opens when someone picks New list from the + menu in the left sidebar, so they can choose a project and a folder.
      (From a project page, the list goes straight into that project and this box is skipped.) -->
 <div class="sig-back" id="nlBack" hidden>
   <div class="sig-box" role="dialog" aria-modal="true" aria-labelledby="nlTitle">

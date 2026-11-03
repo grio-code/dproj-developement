@@ -222,7 +222,7 @@
 
     <!-- A project's details page (index.html#projects/<id>/details): its details, then tabs for punch lists, daily logs, schedule, selections, files and messages.
          Every project is listed in the left sidebar, so there is no separate "My projects" page. -->
-    <!-- ADDED: a project's own dashboard (index.html#projects/<id>): what needs attention, recent activity, this week.
+    <!-- a project's own dashboard (index.html#projects/<id>): what needs attention, recent activity, this week.
          Its "Show project details" button opens the project page below (#projects/<id>/details). -->
     <section class="db-view" id="v-project" aria-label="Project dashboard" hidden>
       <div id="projDash"></div>
@@ -234,7 +234,7 @@
 
   </div>
 
-  <!-- ADDED: Home button, bottom of the screen on phones and iPads only (hidden above 1024px; the sidebar is always there) -->
+  <!-- Home button, bottom of the screen on phones and iPads only (hidden above 1024px; the sidebar is always there) -->
   <nav class="db-dock db-glass" aria-label="Home">
     <a class="db-dock-home" id="dbDockHome" href="index.html#dashboard">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20"/></svg>
@@ -243,7 +243,7 @@
   </nav>
 </div>
 <div class="db-toast" id="dbToast" role="status" aria-live="polite"></div>
-<!-- ADDED: sign-off box. Opens when someone ticks an item in Up next; the item is only marked done after they type their name and sign. -->
+<!-- sign-off box. Opens when someone ticks an item in Up next; the item is only marked done after they type their name and sign. -->
 <div class="db-sign-back" id="dbSignBack" hidden>
   <div class="db-sign" role="dialog" aria-modal="true" aria-labelledby="dbSignH">
     <h2 id="dbSignH">Sign to mark done</h2>
