@@ -1,0 +1,369 @@
+<!-- ©HomeHub LLC 2026 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HomeHub</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HomeHub">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0d1820">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="home/index.css" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=10" rel="stylesheet">
+<!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
+<script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
+
+<!-- Firebase (compat build) + settings, so the top bar knows whether someone is signed in -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="firebase-starter/perms.js?v=1"></script> <!--who may do what (shared by every page) -->
+<script src="firebase-starter/legacy-data.js?v=2"></script> <!-- brings back lists from before workspaces -->
+<script src="nav-bar/nav.js" defer></script>
+<script src="nav-bar/auth-ui.js" defer></script>
+<script src="dashboard/dashboard.js?v=16" defer></script>
+<script src="dashboard/side-menu.js?v=1" defer></script> <!-- hamburger menu on phones and iPads -->
+
+
+</head>
+<body class="page-home">
+
+<!-- The tools. Outlines come from the page; the two fill colors come from each tool's --f1 and --f2 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="t-clip" viewBox="0 0 64 64">
+      <rect x="11" y="9" width="42" height="51" rx="7" fill="var(--f1)"/>
+      <rect x="21" y="3" width="22" height="13" rx="5" fill="var(--f2)"/>
+      <path d="M19 29l4 4 8-9M19 45l4 4 8-9M38 29h8M38 45h8"/>
+    </symbol>
+    <symbol id="t-hat" viewBox="0 0 64 64">
+      <path d="M8 42a24 24 0 0 1 48 0z" fill="var(--f1)"/>
+      <rect x="27" y="13" width="10" height="29" rx="3" fill="var(--f2)"/>
+      <rect x="3" y="42" width="58" height="9" rx="4.5" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-hammer" viewBox="0 0 64 64">
+      <rect x="26" y="22" width="12" height="38" rx="5" fill="var(--f2)"/>
+      <path d="M10 10h38a5 5 0 0 1 5 5v8H10c-4 0-6-3-6-6s2-7 6-7z" fill="var(--f1)"/>
+      <path d="M20 10v13"/>
+    </symbol>
+    <symbol id="t-level" viewBox="0 0 64 64">
+      <rect x="3" y="21" width="58" height="22" rx="5" fill="var(--f1)"/>
+      <rect x="23" y="27" width="18" height="10" rx="5" fill="var(--f2)"/>
+      <circle cx="32" cy="32" r="2.6" fill="var(--f1)"/>
+      <path d="M12 27v10M52 27v10"/>
+    </symbol>
+    <symbol id="t-wrench" viewBox="0 0 64 64">
+      <path d="M22 6h6v10h8V6h6v14c0 5-2 9-6 10v24a4 4 0 0 1-8 0V30c-4-1-6-5-6-10z" fill="var(--f1)"/>
+      <circle cx="32" cy="52" r="2" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-roller" viewBox="0 0 64 64">
+      <rect x="6" y="8" width="42" height="17" rx="6" fill="var(--f1)"/>
+      <path d="M48 16.5h6a3 3 0 0 1 3 3V32H30v6"/>
+      <rect x="25" y="38" width="10" height="21" rx="4" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-pencil" viewBox="0 0 64 64">
+      <path d="M9 55l3-13L42 12l10 10-30 30z" fill="var(--f1)"/>
+      <path d="M42 12l6-6 10 10-6 6z" fill="var(--f2)"/>
+      <path d="M9 55l3-13 10 10z" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-tape" viewBox="0 0 64 64">
+      <rect x="6" y="14" width="42" height="38" rx="9" fill="var(--f1)"/>
+      <circle cx="27" cy="33" r="10" fill="var(--f2)"/>
+      <circle cx="27" cy="33" r="3" fill="var(--f1)"/>
+      <path d="M48 40h12v7H48z" fill="var(--f2)"/>
+      <path d="M53 40v3M57 40v3"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">HomeHub</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<!-- Bottom dock (shows once someone is signed in) -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <a href="index.html" aria-current="page" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <a href="index.html#projects" aria-label="My Projects">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
+      <span class="dock-tip">My Projects</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+    <button role="menuitem" onclick="location.href='index.html#dailylogs'">New Daily Log <span class="soon">Soon</span></button>
+  </div>
+</nav>
+
+<main class="hero" id="hero">
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div>
+  <div class="grid"></div>
+
+  <div class="copy">
+    <h1>Construction management, all in one place.</h1>
+    <p>Manage lists, daily logs, schedules, files, selections, and team messages from one simple platform. Built by builders, for builders, to keep your entire crew on the same page.</p>
+    <div class="cta-row">
+      <a class="cta cta--main cta-guest" href="signup.html">Create a workspace</a>
+      <a class="cta cta--alt cta-guest" href="login.html">Log in</a>
+      <a class="cta cta--main cta-user" href="allLists.html">Open my lists</a>
+    </div>
+  </div>
+
+  <!-- --x / --y = position in %, --s = size in px, --r = tilt, --d / --delay = float speed, --in = drop-in delay, --depth = mouse parallax -->
+  <div class="tools" aria-hidden="true">
+    <div class="tool" style="--x:74;--y:30;--s:150;--r:-6deg;--d:5.5s;--delay:-1s;--in:.15s;--depth:26;--f1:#f4f6f2;--f2:#f0b232"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-clip"/></svg></div></div>
+    <div class="tool" style="--x:58;--y:60;--s:128;--r:8deg;--d:6.2s;--delay:-3s;--in:.3s;--depth:18;--f1:#f0b232;--f2:#f4f6f2"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-hat"/></svg></div></div>
+    <div class="tool" style="--x:88;--y:58;--s:118;--r:28deg;--d:4.8s;--delay:-2s;--in:.45s;--depth:32;--f1:#9fb4c7;--f2:#e8641f"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-hammer"/></svg></div></div>
+    <div class="tool" style="--x:66;--y:86;--s:170;--r:-12deg;--d:7s;--delay:-4s;--in:.6s;--depth:14;--f1:#f0b232;--f2:#f4f6f2"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-level"/></svg></div></div>
+    <div class="tool" style="--x:92;--y:18;--s:100;--r:-30deg;--d:5.2s;--delay:-.5s;--in:.75s;--depth:36;--f1:#9fb4c7;--f2:#f0b232"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-wrench"/></svg></div></div>
+    <div class="tool" style="--x:90;--y:82;--s:100;--r:-18deg;--d:6.6s;--delay:-5s;--in:.9s;--depth:22;--f1:#e8641f;--f2:#f0b232"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-roller"/></svg></div></div>
+    <div class="tool l" style="--x:8;--y:14;--s:76;--r:40deg;--d:5.8s;--delay:-2.5s;--in:1.05s;--depth:30;--f1:#f0b232;--f2:#e8641f"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-pencil"/></svg></div></div>
+    <div class="tool l" style="--x:4;--y:80;--s:92;--r:-16deg;--d:6.4s;--delay:-3.5s;--in:1.2s;--depth:24;--f1:#f0b232;--f2:#f4f6f2"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-tape"/></svg></div></div>
+  </div>
+</main>
+
+
+<!-- ================= Workspace dashboard (signed in) =================
+     Built by dashboard/dashboard.js. Sections switch with the address: #dashboard, #projects, #projects/<id>,
+     #schedule, #files, #selections, #messages. -->
+<!-- <div class="db-bg" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div><div class="grid"></div></div> -->
+
+<div class="db" id="db">
+  <!-- phone and iPad bar. The sidebar below becomes a slide-out menu opened with this button (see dashboard/side-menu.js) -->
+  <div class="db-mbar db-glass">
+    <button type="button" class="db-burger" id="dbBurger" aria-controls="dbSide" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <a class="db-logo" href="index.html#dashboard">HomeHub</a>
+  </div>
+  <div class="db-scrim" id="dbScrim" hidden></div>
+  <aside class="db-side db-glass" id="dbSide" aria-label="Menu">
+    <button type="button" class="db-close" id="dbClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <!-- Logo and workspace (the dashboard has no top bar) -->
+    <div class="db-brand">
+      <a class="db-logo" href="index.html#dashboard">HomeHub</a>
+      <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
+    </div>
+    <div class="db-jobs">
+      <label for="dbJob">Project</label>
+      <div class="db-select">
+        <select id="dbJob">
+          <option value="">All projects</option>
+        </select>
+      </div>
+      <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-project.html">New project</a>
+    </div>
+  <nav class="db-nav" aria-label="Workspace sections">
+    <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+    <a href="#projects" data-view="projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>My projects</a>
+    <hr>
+    <a href="allLists.html" class="db-nav-lists"><svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>Lists</a>
+    <a href="#dailylogs" data-view="dailylogs"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>Daily Logs<span class="soon">Soon</span></a>
+    <a href="#schedule" data-view="schedule"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule<span class="soon">Soon</span></a>
+    <a href="#files" data-view="files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files<span class="soon">Soon</span></a>
+    <a href="#selections" data-view="selections"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/><path d="M13 6.5h7.5M3.5 17.5H11"/></svg>Selections<span class="soon">Soon</span></a>
+    <a href="#messages" data-view="messages"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Messages<span class="soon">Soon</span></a>
+    <hr>
+    <a href="settings.html" class="db-nav-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Settings</a>
+  </nav>
+  </aside>
+
+  <div class="db-main">
+
+    
+    <!-- Dashboard: answers What needs my attention? What's happening? What should I do next? -->
+   <!--  animated backdrop  -->
+    <div class="db-bg" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div><div class="grid"></div></div>
+
+    <section class="db-view" id="v-dashboard" aria-labelledby="dbBrief">
+      <div class="db-top">
+        <p class="db-hello" id="dbHello">&nbsp;</p>
+        <div class="db-wx" id="dbWeather" aria-live="polite"></div>
+      </div>
+      <h1 class="db-brief is-loading" id="dbBrief">Getting your projects…</h1>
+
+      <div class="db-facts db-glass" id="dbFacts">
+        <div class="db-fact"><b id="fProjects">–</b><span>Active projects</span></div>
+        <div class="db-fact" id="fOpenBox"><b id="fOpen">–</b><span>Open punch items</span></div>
+        <div class="db-fact"><b id="fSigned">–</b><span>Signed off in the last 7 days</span></div>
+        <div class="db-fact"><b id="fTeam">–</b><span>People in the workspace</span></div>
+      </div>
+
+      <section class="db-panel db-glass db-attn" id="attention" aria-labelledby="attH">
+        <div class="db-panel-h"><h2 id="attH">Needs your attention</h2><span class="db-pill">Coming soon</span></div>
+        <p class="db-empty">This feature is coming soon. It will flag projects that have gone quiet, long lists and anything else waiting on you.</p>
+      </section>
+
+      <div class="db-cols">
+        <section class="db-panel db-glass" id="activity" aria-labelledby="actH">
+          <div class="db-panel-h"><h2 id="actH">Recent activity</h2></div>
+          <ul class="db-feed" id="dbFeed"></ul>
+        </section>
+        <section class="db-panel db-glass" id="next" aria-labelledby="nextH">
+          <div class="db-panel-h"><h2 id="nextH">Up next</h2><span class="db-count" id="nextCount"></span>
+            <!-- ADDED: show only the items assigned to you -->
+            <button type="button" class="db-btn db-mine" id="dbMine" aria-pressed="false">Assigned to me</button></div>
+          <ul class="db-tasks" id="dbTasks"></ul>
+          <button type="button" class="db-btn db-more" id="dbMoreTasks" hidden></button>
+        </section>
+      </div>
+
+      <section class="db-panel db-glass" id="progress" aria-labelledby="progressH">
+        <div class="db-panel-h">
+          <h2 id="progressH">Your projects</h2>
+          <a href="#projects" class="db-btn">View all projects</a>
+        </div>
+        <ul class="db-progress" id="dbProgress"></ul>
+      </section>
+    </section>
+
+    <!-- Projects: every punch list in the workspace, and one project's details -->
+    <section class="db-view" id="v-projects" aria-labelledby="projH" hidden>
+      <!--  animated backdrop  -->
+      <div class="db-bg" aria-hidden="true"><div class="grid"></div></div>
+
+      <div id="projList">
+        <div class="db-head">
+          <div>
+            <h2 id="projH">My projects</h2>
+            <p class="db-sub">Every project in the workspace. Open one to see its details, lists and daily logs.</p>
+          </div>
+          <label class="db-search"><span class="sr-only">Search projects</span><input type="search" id="projSearch" placeholder="Search by name, lot, community or address"></label>
+          <a class="db-btn db-btn--main" id="newProject" href="new-project.html">New project</a>
+        </div>
+        <!-- ADDED: filter projects by stage. Open → Warranty → Close (see "PROJECT STAGES" in dashboard/dashboard.js) -->
+        <div class="db-tabs db-glass db-stage" id="projStage" role="group" aria-label="Show projects by stage">
+          <button type="button" data-stage="open" aria-pressed="true">Open <span class="n" id="stageOpenN"></span></button>
+          <button type="button" data-stage="warranty" aria-pressed="false">Warranty <span class="n" id="stageWarrantyN"></span></button>
+          <button type="button" data-stage="closed" aria-pressed="false">Closed <span class="n" id="stageClosedN"></span></button>
+        </div>
+        <div class="db-projects" id="dbProjects"></div>
+        <section class="db-panel db-glass db-loose-box" id="dbLoose" aria-label="Lists not in a project" hidden></section>
+      </div>
+      <div id="projDetail" hidden></div>
+    </section>
+    
+    <section class="db-view" id="v-dailylogs" aria-labelledby="dlH" hidden>
+      <div class="db-soon db-glass">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>
+        <span class="db-pill">Coming soon</span>
+        <h3 id="dlH">Daily Logs</h3>
+        <p>Record weather, crew on site, deliveries and progress photos for each project, every day.</p>
+      </div>
+    </section>
+
+    <section class="db-view" id="v-schedule" aria-labelledby="schH" hidden>
+      <div class="db-soon db-glass">
+        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+        <span class="db-pill">Coming soon</span>
+        <h3 id="schH">My Schedule</h3>
+        <p>Plan each project's phases and trade visits on one calendar, so everyone knows who's on site and when.</p>
+      </div>
+    </section>
+
+    <section class="db-view" id="v-files" aria-labelledby="filH" hidden>
+      <div class="db-head"><div><h2 id="filH">Files</h2><p class="db-sub">Documents, images and uploads for your projects.</p></div></div>
+      <label class="db-drop" id="dbDrop">
+        <svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>
+        <b>Upload an image</b>
+        <span>Drag a photo here or choose one. File storage is coming soon.</span>
+        <input type="file" id="dbFile" accept="image/*">
+      </label>
+    </section>
+
+    <section class="db-view" id="v-selections" aria-labelledby="selH" hidden>
+      <div class="db-soon db-glass">
+        <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/><path d="M13 6.5h7.5M3.5 17.5H11"/></svg>
+        <span class="db-pill">Coming soon</span>
+        <h3 id="selH">Selections</h3>
+        <p>Track the finishes, fixtures and colors each buyer picks, and get approvals before work starts.</p>
+      </div>
+    </section>
+
+    <section class="db-view" id="v-messages" aria-labelledby="msgH" hidden>
+      <div class="db-soon db-glass">
+        <svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>
+        <span class="db-pill">Coming soon</span>
+        <h3 id="msgH">Messages</h3>
+        <p>Talk with your crew, trades and buyers in one place, organized by project.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+<div class="db-toast" id="dbToast" role="status" aria-live="polite"></div>
+<!-- ADDED: sign-off box. Opens when someone ticks an item in Up next; the item is only marked done after they type their name and sign. -->
+<div class="db-sign-back" id="dbSignBack" hidden>
+  <div class="db-sign" role="dialog" aria-modal="true" aria-labelledby="dbSignH">
+    <h2 id="dbSignH">Sign to mark done</h2>
+    <p class="db-sign-item" id="dbSignItem"></p>
+    <label for="dbSignName">Your name</label>
+    <input id="dbSignName" type="text" maxlength="60" autocomplete="name" placeholder="First and last name">
+    <div class="db-sign-label"><span>Signature</span><button type="button" id="dbSignClear">Clear</button></div>
+    <canvas id="dbSignPad" aria-label="Sign here with your finger or mouse"></canvas>
+    <p class="db-sign-err" id="dbSignErr" hidden></p>
+    <div class="db-sign-acts"><button type="button" class="db-btn" id="dbSignCancel">Cancel</button><button type="button" class="db-btn db-btn--main" id="dbSignOk">Sign &amp; mark done</button></div>
+  </div>
+</div>
+
+<script>
+  // Keep the page content clear of the fixed top bar
+  function setNavH() {
+    const n = document.getElementById("fnav");
+    if (n) document.documentElement.style.setProperty("--nav-h", n.offsetHeight + "px");
+  }
+  setNavH();
+  window.addEventListener("resize", setNavH);
+  window.addEventListener("load", setNavH);
+
+  // The tools drift a little with the mouse (skipped on touch screens and when reduced motion is on)
+  (() => {
+    const hero = document.getElementById("hero");
+    if (!matchMedia("(hover: hover)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    hero.addEventListener("pointermove", e => {
+      const r = hero.getBoundingClientRect();
+      hero.style.setProperty("--mx", ((e.clientX - r.left) / r.width - .5) * 2);
+      hero.style.setProperty("--my", ((e.clientY - r.top) / r.height - .5) * 2);
+    });
+    hero.addEventListener("pointerleave", () => { hero.style.setProperty("--mx", 0); hero.style.setProperty("--my", 0); });
+  })();
+</script>
+<footer class="site-copy">©<i>HomeHub LLC</i>2026</footer>
+</body>
+</html>

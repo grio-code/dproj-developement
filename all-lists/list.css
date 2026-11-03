@@ -1,0 +1,1016 @@
+/* ©HomeHub LLC 2026 */
+/* Layout: phone-first walkthrough. Sticky header with open count + filters, then one card per room that expands into big tap-target items. */
+
+/* ---------- Design tokens (colors and fonts) ----------
+   Everything below uses these variables, so changing a color here changes it everywhere. */
+:root {
+  --bg: #eceeea;          /* page background */
+  --sheet: #f8f9f6;       /* card / input background */
+  --ink: #1d2422;         /* main text */
+  --muted: #5d6763;       /* secondary text */
+  --rule: #cfd4cf;        /* borders and dividers */
+  --accent: #e8a317;      /* amber: "open items" pill and floor underline */
+  --accent-ink: #2a1e00;  /* text on top of the accent color */
+  --done: #2f7d4f;        /* green: completed items */
+  --chip: #dde8f2;        /* trade tag background */
+  --chip-ink: #2d5f8a;    /* trade tag text, links */
+  --danger: #b23b2e;      /* delete buttons */
+  --focus: #2d5f8a;       /* keyboard focus ring */
+  --f-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+/* Dark mode, automatic: follows the phone's setting unless the page was forced to light via data-theme="light" */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151a19; 
+    --sheet: #1d2422; 
+    --ink: #e6ebe7; 
+    --muted: #9aa49f; 
+    --rule: #333d3a;
+    --accent: #f0b232; 
+    --accent-ink: #231800; 
+    --done: #58b07c; 
+    --chip: #1f3245; 
+    --chip-ink: #8db8de; 
+    --danger: #e07a6c; 
+    --focus: #8db8de;
+    color-scheme: dark;
+  }
+}
+/* Dark mode, forced: same colors, applied when data-theme="dark" is set on <html> */
+:root[data-theme="dark"] {
+  --bg: #151a19; 
+  --sheet: #1d2422; 
+  --ink: #e6ebe7; 
+  --muted: #9aa49f; 
+  --rule: #333d3a;
+  --accent: #f0b232; 
+  --accent-ink: #231800; 
+  --done: #58b07c; 
+  --chip: #1f3245; 
+  --chip-ink: #8db8de; 
+  --danger: #e07a6c; 
+  --focus: #8db8de;
+  color-scheme: dark;
+}
+
+/* ---------- Base / reset ---------- */
+* { 
+  box-sizing: border-box; 
+  -webkit-tap-highlight-color: transparent; 
+} /* padding counts inside widths; no gray flash on tap */
+body { 
+  background: var(--bg); 
+  color: var(--ink); 
+  font-family: var(--f-body); 
+  font-size: 16px; 
+  line-height: 1.45; 
+}
+.wrap { 
+  max-width: 720px; 
+  margin: 0 auto; 
+  padding-inline: 16px; 
+  padding-block: 0 calc(130px + env(safe-area-inset-bottom, 0px)); /* CHANGED: was 56px. Leaves room under the last thing on the page (like "Delete this list") so the floating bottom dock never covers it */
+} /* centered column, phone-width on desktop too */
+button, select, input, textarea { 
+  font: inherit; 
+  color: inherit; 
+} /* form controls inherit the page font instead of browser defaults */
+:focus-visible { 
+  outline: 2px solid var(--focus); 
+  outline-offset: 2px; 
+} /* focus ring for keyboard users */
+
+/* ---------- Title area and sticky header ---------- */
+.titlebar { 
+  padding-block: 16px 0; 
+}
+/* The header with the progress bar and filters sticks to the top while scrolling */
+header.top {
+  position: sticky; 
+  top: env(safe-area-inset-top, 0px); 
+  z-index: 5; 
+  background: var(--bg); 
+  padding-block: 4px 10px; 
+  border-bottom: 1px solid var(--rule); 
+}
+.row1 { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-end; 
+  gap: 12px;
+ } /* title on the left, open count on the right */
+.eyebrow { 
+  font-family: var(--f-mono); 
+  font-size: 11px; 
+  letter-spacing: .12em; 
+  text-transform: uppercase; 
+  color: var(--muted); 
+}
+h1 { 
+  font-family: var(--f-display); 
+  font-weight: 700; 
+  font-size: 34px; 
+  line-height: 1; 
+  margin: 2px 0 0; 
+  text-transform: uppercase; 
+  letter-spacing: .01em; 
+}
+.count { 
+  text-align: right; 
+  font-variant-numeric: tabular-nums; 
+  flex: none; 
+} /* big "open items" number */
+.count .big { 
+  font-family: var(--f-display); 
+  font-weight: 700; 
+  font-size: 34px; 
+  line-height: 1; 
+}
+.count .lbl { 
+  font-size: 12px; 
+  color: var(--muted); 
+}
+
+/* ---------- Job info fields (date, community, address, lot) ---------- */
+.jobinfo { 
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: 10px 12px; 
+  padding-block: 14px 4px; 
+}
+.jobinfo .f { 
+  display: grid; 
+  gap: 3px; 
+  min-width: 0; 
+}
+.jobinfo .w2 { 
+  grid-column: span 2; 
+} /* "wide" fields take two of the three columns */
+.jobinfo label { 
+  font-family: var(--f-mono); 
+  font-size: 10.5px; 
+  letter-spacing: .12em; 
+  text-transform: uppercase; 
+  color: var(--muted); 
+}
+.jobinfo input { 
+  width: 100%; 
+  min-width: 0; 
+  padding: 9px 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; 
+} /* 16px stops iOS from zooming in on focus */
+.jobinfo input::placeholder,
+.jobinfo textarea::placeholder { 
+  color: var(--muted); 
+}
+/* ADDED: Description box under Address and Lot #, styled like the other fields; takes the whole row */
+.jobinfo .desc { 
+  grid-column: 1 / -1; 
+}
+.jobinfo textarea { 
+  width: 100%; 
+  min-width: 0; 
+  min-height: 44px; 
+  padding: 9px 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; 
+  line-height: 1.4; 
+  resize: vertical; 
+  overflow: hidden; 
+}
+
+/* ---------- Progress bar, filters, toolbar buttons ---------- */
+.gauge { 
+  height: 8px; 
+  background: var(--rule); 
+  border-radius: 2px; 
+  overflow: hidden; 
+  margin-top: 10px; 
+} /* track */
+.gauge i { 
+  display: block; 
+  height: 100%; 
+  width: 0; 
+  background: var(--done); 
+  transition: width .3s; 
+} /* green fill; JS sets its width to the % done */
+.filters { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 10px; 
+}
+.filters select { 
+  flex: 1; 
+  min-width: 0; 
+  padding: 8px 10px;
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 15px; 
+}
+.tools { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 8px; 
+  align-items: center; 
+  flex-wrap: wrap; 
+}
+.btn { 
+  border: 1px solid var(--rule); 
+  background: var(--sheet); 
+  border-radius: 6px; 
+  padding: 8px 12px;
+  font-size: 14px; 
+  cursor: pointer; 
+  min-height: 40px; 
+} /* 40px min height = comfortable tap target */
+.btn.primary { 
+  background: var(--ink); 
+  color: var(--bg); 
+  border-color: var(--ink); 
+} /* dark filled button */
+.btn.danger { 
+  color: var(--danger); border-color: var(--danger); 
+}
+.saved { 
+  margin-left: auto; 
+  font-size: 12px; 
+  color: var(--muted); 
+  font-family: var(--f-mono); 
+} /* "Saved" / "Syncing…" status text */
+
+/* ---------- "Add to Home Screen" tip box ---------- */
+.tip { 
+  margin-top: 14px; 
+  background: var(--sheet); 
+  border: 1px dashed var(--rule); 
+  border-radius: 6px; 
+  padding: 10px 12px; 
+  font-size: 14px; 
+  display: flex; 
+  gap: 10px; 
+  align-items: flex-start; 
+}
+.tip p { 
+  margin: 0; 
+  flex: 1; 
+  min-width: 0; 
+}
+.tip b { 
+  font-weight: 600; 
+}
+.x { 
+  background: none; 
+  border: 0; 
+  color: var(--muted); 
+  font-size: 20px; 
+  line-height: 1;
+  padding: 0 4px; 
+  cursor: pointer; 
+} /* small "×" close buttons */
+
+/* ---------- Rooms list ---------- */
+main { 
+  display: grid; 
+  gap: 10px; 
+  margin-top: 14px; 
+}
+/* Floor headings ("Second Floor", etc.) with an amber underline */
+h2.floor { 
+  font-family: var(--f-mono); 
+  font-size: 12px; 
+  letter-spacing: .14em; 
+  text-transform: uppercase; 
+  color: var(--muted); 
+  font-weight: 500; 
+  margin: 12px 0 0; 
+  padding-bottom: 6px; 
+  border-bottom: 2px solid var(--accent); 
+}
+h2.floor:first-child {
+  margin-top: 0; 
+}
+.room { 
+  background: var(--sheet); 
+  border: 1px solid var(--rule); 
+  border-radius: 8px; 
+  overflow: hidden; 
+} /* one card per room */
+.room-head { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  width: 100%; 
+  background: none; 
+  border: 0; 
+  padding: 14px; 
+  cursor: pointer; 
+  text-align: left;
+  min-height: 56px; 
+} /* the tappable row that expands/collapses the room */
+.room-name { 
+  font-family: var(--f-display); 
+  font-weight: 600; 
+  font-size: 22px; 
+  text-transform: uppercase; 
+  letter-spacing: .02em; 
+  flex: 1; min-width: 0; 
+  line-height: 1.1; 
+}
+/* Status pill next to the room name: amber = has open items, green = all clear, outlined = no items */
+.pill { 
+  font-family: var(--f-mono); 
+  font-size: 12px; 
+  padding: 3px 8px; 
+  border-radius: 999px; 
+  background: var(--accent); 
+  color: var(--accent-ink);
+  flex: none; 
+  font-variant-numeric: tabular-nums; 
+}
+.pill.clear { 
+  background: var(--done); 
+  color: var(--sheet); 
+}
+.pill.none { 
+  background: transparent; 
+  color: var(--muted); 
+  border: 1px solid var(--rule); 
+}
+.chev { 
+  flex: none; 
+  color: var(--muted); 
+  transition: transform .2s; 
+} /* the arrow icon */
+.room.open .chev { 
+  transform: rotate(180deg); 
+} /* flips the arrow when the room is open */
+.room-body { 
+  border-top: 1px solid var(--rule); 
+} /* the expanded area under a room header */
+ul { 
+  list-style: none; 
+  margin: 0; 
+  padding: 0; 
+}
+
+/* ---------- Individual punch items ---------- */
+li.item { 
+  display: grid; 
+  grid-template-columns: 32px 1fr; 
+  gap: 6px 12px; 
+  padding: 12px 14px;
+  border-bottom: 1px dashed var(--rule); 
+} /* checkbox column + content column */
+/* Custom-drawn checkbox: native look is removed, then a green box with a checkmark is drawn with CSS */
+.item input[type=checkbox] { 
+  appearance: none; 
+  width: 28px; 
+  height: 28px; 
+  margin: 0; 
+  border: 2px solid var(--muted); 
+  border-radius: 6px; 
+  display: grid; 
+  place-content: center; 
+  cursor: pointer; 
+  background: var(--sheet); 
+}
+.item input[type=checkbox]:checked { 
+  background: var(--done); 
+  border-color: var(--done); 
+}
+.item input[type=checkbox]:checked::after { 
+  content: ""; 
+  width: 7px; 
+  height: 13px; 
+  border: solid var(--sheet); 
+  border-width: 0 3px 3px 0; 
+  transform: rotate(45deg) translate(-1px, -1px); 
+} /* the checkmark itself */
+.it-main { 
+  min-width: 0; 
+}
+.it-main label { 
+  cursor: pointer; 
+  display: block; 
+} /* tapping the text also toggles the checkbox */
+.item.done .txt { 
+  color: var(--muted); 
+  text-decoration: line-through; 
+  text-decoration-color: var(--rule); 
+} /* (overridden further down) */
+.meta {
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 6px; 
+  align-items: center; 
+  margin-top: 6px; 
+} /* row of trade tag, done badge, Edit/Remove links */
+.trade { 
+  font-family: var(--f-mono); 
+  font-size: 11px; 
+  letter-spacing: .05em; 
+  text-transform: uppercase; 
+  color: var(--chip-ink); 
+  background: var(--chip); 
+  padding: 2px 7px; 
+  border-radius: 3px; 
+} /* trade tag, e.g. PAINT */
+.when { 
+  font-family: var(--f-mono); 
+  font-size: 11px; 
+  color: var(--muted); 
+}
+.link { 
+  background: none; 
+  border: 0; 
+  padding: 4px 2px; 
+  color: var(--chip-ink); 
+  font-size: 13px; 
+  cursor: pointer; 
+  text-decoration: underline; 
+  text-underline-offset: 2px; 
+} /* buttons that look like text links */
+.link.muted { 
+  color: var(--muted); 
+}
+.note { 
+  font-size: 14px; 
+  color: var(--muted); 
+  margin-top: 4px; 
+  white-space: pre-wrap; 
+  overflow-wrap: anywhere; 
+} /* pre-wrap keeps line breaks the user typed */
+
+/* ---------- Inline edit forms and add-item forms ---------- */
+.edit { 
+  grid-column: 1 / 3; 
+  display: grid; 
+  gap: 8px; 
+} /* spans both columns of the item grid */
+.edit textarea, .add input, .add select, .addroom input { 
+  width: 100%; 
+  padding: 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--bg); 
+  font-size: 16px; 
+}
+.edit textarea { 
+  min-height: 72px; 
+  resize: vertical; 
+}
+.edit .acts, .confirm .acts { 
+  display: flex; 
+  gap: 8px; 
+  justify-content: flex-end; 
+} /* Cancel / Save button rows */
+.add { 
+  display: grid; 
+  grid-template-columns: 1fr 130px auto; 
+  gap: 8px; 
+  padding: 12px 14px; 
+} /* "New Item" input + trade dropdown + Add button */
+.room-foot { 
+  display: flex; 
+  justify-content: flex-end; 
+  padding: 0 14px 12px; 
+} /* "Rename room / Remove room" links */
+.confirm { 
+  padding: 12px 14px; 
+  border-top: 1px solid var(--rule); 
+  display: grid; 
+  gap: 8px; 
+  font-size: 14px; 
+} /* "Are you sure?" prompts */
+.empty { 
+  padding: 12px 14px; 
+  font-size: 14px; 
+  color: var(--muted); 
+} /* empty-state messages */
+.addroom { 
+  display: grid; 
+  grid-template-columns: 1fr 140px auto; 
+  gap: 8px; 
+  margin-top: 18px; 
+} /* "Add New Room" row: name + level dropdown + Add */
+.addroom select { 
+  padding: 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; 
+}
+.toast { 
+  position: fixed; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px)); 
+  background: var(--ink); 
+  color: var(--bg); 
+  padding: 10px 16px; 
+  border-radius: 8px; 
+  font-size: 14px; 
+  z-index: 10; 
+  max-width: calc(100% - 32px); 
+} /* small popup message at the bottom of the screen */
+.copybox { 
+  margin-top: 10px; 
+} /* holds the copy-text textarea and the trades editor */
+.copybox textarea { 
+  width: 100%; 
+  min-height: 140px; 
+  font-family: var(--f-mono); 
+  font-size: 12px; 
+  padding: 8px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+}
+
+/* ---------- Small-screen adjustments (phones) ---------- */
+@media (max-width: 480px) {
+  .jobinfo { 
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); 
+  } /* two columns instead of three */
+  .jobinfo .w2 { 
+    grid-column: 1 / -1; 
+  } /* wide fields take the full row */
+  .jobinfo .w2 { 
+    order: 2; 
+  }            /* and move below Date and Lot */
+  .jobinfo .desc { 
+    order: 2; 
+  }          /* ADDED: Description stays right under Address on phones */
+  .jobinfo .full { 
+    order: 3; 
+  }          /* ADDED: the Folder dropdown goes last on phones */
+  .add { 
+    grid-template-columns: 1fr 1fr; 
+  }
+  .add input { 
+    grid-column: 1 / 3; 
+  }    /* item text gets its own full-width row */
+  .addroom { 
+    grid-template-columns: 1fr auto;
+  }
+  .addroom input { 
+    grid-column: 1 / 3;
+  }
+}
+/* Respect users who have "reduce motion" turned on: disable animations */
+@media (prefers-reduced-motion: reduce) { * { 
+  transition: none !important; 
+} }
+
+/* ---------- Later additions / overrides ---------- */
+html { 
+  -webkit-text-size-adjust: 100%; 
+} /* stops iOS from resizing text when the phone rotates */
+:root { 
+  padding-top: env(safe-area-inset-top, 0px); 
+  padding-bottom: env(safe-area-inset-bottom, 0px); 
+} /* keeps content clear of the notch and home bar */
+body { 
+  margin: 0; 
+}
+[hidden] { 
+  display: none !important; 
+} /* makes the hidden attribute always win over display rules */
+.back { 
+  background: none; 
+  border: 0; 
+  padding: 4px 0;
+  margin-bottom: 6px; 
+  color: var(--chip-ink); 
+  font-size: 15px; 
+  cursor: pointer; 
+} /* "‹ All punch lists" button */
+.banner { 
+  margin-top: 14px; 
+  background: var(--chip); 
+  color: var(--ink); 
+  border-radius: 6px; 
+  padding: 10px 12px; 
+  font-size: 14px; 
+} /* the "sharing isn't set up" notice */
+ul.jobs { 
+  margin-top: 14px; 
+  display: grid; 
+  gap: 10px; 
+} /* list of punch lists on the home screen */
+ul.jobs a { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 14px; 
+  background: var(--sheet); 
+  border: 1px solid var(--rule); 
+  border-radius: 8px; 
+  color: inherit; 
+  text-decoration: none; 
+  min-height: 64px;
+}
+ul.jobs a:hover { 
+  border-color: var(--muted); 
+}
+.j-main { 
+  flex: 1; 
+  min-width: 0; 
+  display: grid; 
+  gap: 2px; 
+}
+.j-title { 
+  font-family: var(--f-display); 
+  font-weight: 600; 
+  font-size: 22px; 
+  text-transform: uppercase; 
+  letter-spacing: .02em; 
+  line-height: 1.1; 
+  overflow-wrap: anywhere; 
+}
+.j-sub { 
+  font-size: 13px; 
+  color: var(--muted); 
+  overflow-wrap: anywhere; 
+}
+.danger-zone { 
+  margin-top: 28px; 
+  text-align: center; 
+} /* "Delete this punch list" link area */
+.confirm.boxed { 
+  margin-top: 12px; 
+  border: 1px solid var(--danger); 
+  border-radius: 8px; 
+  background: var(--sheet); 
+} /* red-bordered delete confirmation */
+.edit input, .edit select, #addTrade input, #addFloor input { 
+  width: 100%; 
+  padding: 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--bg); 
+  font-size: 16px; 
+}
+#tradeList .trade, #floorList .trade { 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 4px;
+} /* trade/level tags with a × inside */
+#tradeList .x, #floorList .x { 
+  font-size: 18px; 
+  padding: 0 2px; 
+  color: var(--chip-ink); 
+}
+.item.done { 
+  box-shadow: inset 4px 0 0 var(--done); 
+} /* green stripe on the left of completed items */
+.item.done .txt { 
+  color: var(--muted); 
+  text-decoration: line-through;
+  text-decoration-color: var(--muted); 
+} /* strikethrough for completed items (this one wins over the earlier rule) */
+/* ADDED: styles for the folders feature */
+.ficon { 
+  flex: none; 
+  color: var(--muted); 
+} /* little folder icon on a folder's header row */
+.jobinfo .full { 
+  grid-column: 1 / -1; 
+} /* the Folder dropdown takes the whole row */
+.jobinfo select { 
+  width: 100%; 
+  min-width: 0; 
+  padding: 9px 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; 
+} /* Folder dropdown, styled like the other job info fields */
+#addFolderForm { 
+  display: grid; 
+  grid-template-columns: 1fr auto;
+  gap: 8px; 
+  margin-top: 12px;
+} /* "New folder" name box + Create button */
+#addFolderForm input { 
+  width: 100%; 
+  padding: 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; }
+/* ADDED: styles for dragging a list into a folder */
+ul.jobs a { 
+  -webkit-touch-callout: none; 
+  -webkit-user-select: none; 
+  user-select: none; 
+} /* no text selection or link preview popup when you press and hold a list */
+.drag-ghost { 
+  position: fixed; 
+  left: 0; 
+  top: 0; 
+  margin: 0 !important; 
+  z-index: 30; 
+  pointer-events: none; 
+  opacity: .92; 
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,.3)); 
+} /* the floating copy of the list that follows your finger */
+.is-dragging-source { 
+  opacity: .35; 
+} /* the original list row fades while you drag it */
+.drop-hover { 
+  outline: 3px solid var(--accent); 
+  outline-offset: -3px; 
+} /* highlights the folder (or drop area) under your finger */
+.dropzone { 
+  border: 2px dashed var(--muted); 
+  border-radius: 8px; 
+  padding: 16px; 
+  text-align: center; 
+  color: var(--muted); 
+  font-size: 14px; 
+  list-style: none; 
+} /* "drop here to take it out of its folder" area */
+.badge-done { 
+  font-family: var(--f-mono); 
+  font-size: 11px; 
+  letter-spacing: .05em; 
+  text-transform: uppercase; 
+  color: var(--sheet); 
+  background: var(--done); 
+  padding: 2px 7px; 
+  border-radius: 3px; 
+} /* green "✓ Done Oct 12" badge */
+
+.wrap {
+    padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 16px);
+  }
+
+/* ---------- ADDED: editing permission ----------
+   allLists.js puts "can-edit" on <html> for the workspace owner and members allowed to edit.
+   Everyone else sees the list read-only and can only check items off. */
+html:not(.can-edit) .edit-only { 
+  display: none !important; 
+}
+.jobinfo input:disabled, 
+.jobinfo textarea:disabled { 
+  opacity: 1; 
+  color: var(--ink); 
+  -webkit-text-fill-color: var(--ink); /* Safari greys out disabled text otherwise */
+  background: transparent; 
+  border-style: dashed; 
+  resize: none; 
+}
+.jobinfo input:disabled::placeholder, 
+.jobinfo textarea:disabled::placeholder { 
+  color: transparent; 
+}
+.viewonly { 
+  margin: 12px 0 0; 
+  padding: 9px 12px; 
+  border: 1px solid var(--rule); 
+  border-left: 3px solid var(--accent); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 14px; 
+  color: var(--muted); 
+}
+
+/* ---------- ADDED: signature pop-up ----------
+   Fixed to the screen (not part of the page flow), so it opens right over the list wherever you've scrolled to.
+   Sits above the nav bar (z-index 50). On phones it is anchored near the top so the keyboard doesn't cover it. */
+.sig-back {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(0, 0, 0, .65);
+} /* dimmed layer that covers the whole screen; tap it to cancel */
+.sig-box {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 18px 16px 16px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .45);
+  display: grid;
+  gap: 8px;
+}
+@media (min-width: 700px) {
+  .sig-back { align-items: center; } /* bigger screens: centered in the window */
+}
+.sig-box h2 { margin: 0; line-height: 1.05; }
+.sig-item { margin: 0; color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+.sig-box label { font-size: 13px; color: var(--muted); }
+.sig-box input { width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--rule); border-radius: 6px; } /* 16px stops iOS zooming in on focus */
+.sig-label { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 4px; }
+#sigPad {
+  display: block;
+  width: 100%;
+  height: 180px;
+  background: #fff;       /* the pen color is dark, so the pad stays light in both themes */
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  touch-action: none;     /* so drawing with a finger doesn't scroll the page */
+  cursor: crosshair;
+}
+.sig-err { margin: 0; color: var(--danger); font-size: 14px; }
+.sig-box .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.sig-box .acts .btn.primary { flex: 1; }
+
+/* ---------- ADDED: stop the Date and Lot # fields overlapping on phones ----------
+   iPhones draw a date box with its own minimum width, which pushed it out of its column and over the Lot # box.
+   Each field's column is now allowed to shrink (minmax(0, 1fr)), and the date box is reset to behave like the text boxes. */
+.jobinfo .f { grid-template-columns: minmax(0, 1fr); }
+.jobinfo input { min-height: 42px; box-sizing: border-box; }
+.jobinfo input[type="date"] {
+  -webkit-appearance: none; appearance: none; /* drop the iOS built-in look so width and height obey the CSS */
+  display: block;
+  width: 100%; min-width: 0; max-width: 100%;
+  text-align: left;
+  line-height: 1.2;
+}
+.jobinfo input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; margin: 0; }
+/* ---------- ADDED: match the other pages (New project, Settings, My Projects) ----------
+   Same page width and spacing under the top bar, a short intro under the title, and the
+   rounded glass cards and title type used on the project cards. Colors still come from theme.css. */
+.wrap {
+  max-width: 820px;
+  padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 24px); /* clears the floating top bar, like the other pages */
+}
+.titlebar .eyebrow { margin-bottom: 2px; }
+.lede { margin: 10px 0 0; max-width: 36em; color: rgba(255, 255, 255, .72); }
+/* The bar with the progress gauge and filters sticks just below the top bar instead of hiding under it */
+header.top {
+  top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 6px);
+  margin-inline: -12px;
+  padding-inline: 12px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+}
+/* Rounded cards like the project cards */
+ul.jobs a, .room, .tip, .banner, .viewonly, .confirm.boxed { border-radius: 14px; }
+ul.jobs a { padding: 16px 18px; }
+.room-head { padding: 16px 18px; }
+/* List and folder names: the same heading type as the project cards (not all caps) */
+.j-title, .room-name { font-weight: 700; text-transform: none; letter-spacing: 0; font-size: 22px; line-height: 1.05; }
+.j-sub { color: rgba(255, 255, 255, .62); }
+.tools .btn { min-height: 44px; padding-inline: 16px; }
+/* Which project a folder belongs to (set automatically, see allLists.js) */
+.fproj {
+  flex: none; max-width: 40%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 3px 9px; border-radius: 999px;
+  font: 500 12px var(--f-body);
+  color: #8db8de; background: rgba(141, 184, 222, .16);
+}
+@media (max-width: 620px) {
+  .fproj { display: none; } /* not enough room on the folder row; the project still shows inside the folder */
+  header.top { margin-inline: -8px; padding-inline: 8px; }
+}
+.fproj-note { margin: 0; padding: 12px 18px 0; font-size: 13px; color: rgba(255, 255, 255, .62); }
+.fproj-note a { color: #8db8de; }
+
+/* ---------- ADDED: the dashboard's left sidebar (markup in allLists.html, styles in dashboard/dashboard.css) ----------
+   Signed-in people get the dashboard layout: sidebar on the left, no top bar, My Lists on the right.
+   Guests opening a shared list get the top bar and no sidebar, as before. */
+.page-lists .db { display: block; }                 /* guests: one column (signed-in people get display: grid from dashboard.css) */
+.page-lists .db { padding-top: 0; }                 /* guests: the page column already clears the top bar */
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .db { padding-top: calc(env(safe-area-inset-top, 0px) + 28px); }
+@media (max-width: 760px) {
+  :is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .db { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+}
+.page-lists .db-side { display: none; }
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .db-side { display: grid; }
+/* ADDED: the phone and iPad menu bar is for signed-in people only, like the sidebar it opens */
+.page-lists .db-mbar { display: none; }
+@media (max-width: 1024px) {
+  :is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .db-mbar { display: flex; }
+}
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) body.page-lists .fnav { display: none; }
+/* Inside the dashboard layout the page column fills the space next to the sidebar */
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .wrap {
+  max-width: 880px;
+  margin: 0;
+  padding: 0;
+}
+/* Title and intro like the dashboard sections (My projects) */
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .titlebar { padding-top: 0; margin-bottom: 0; }
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .titlebar .eyebrow { display: none; }
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .wrap h1 {
+  margin: 0;
+  font: 700 30px/1 var(--f-display);
+  letter-spacing: -.005em;
+  text-transform: none;
+  text-shadow: none;
+}
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .lede { margin-top: 6px; font-size: 14px; color: rgba(255, 255, 255, .66); }
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists .back { margin-bottom: 4px; }
+/* No top bar to clear, so the filter bar sticks near the top of the window */
+:is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists header.top { top: calc(env(safe-area-inset-top, 0px) + 12px); }
+/* The sidebar's project picker: the dashboard draws its own arrow, so drop the glass field look theme.css gives other dropdowns */
+.page-lists .db-select select {
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); box-shadow: none;
+}
+.page-lists .db-nav a, .page-lists .db-logo, .page-lists .db-ws { --ink: #fff; }
+@media (max-width: 760px) {
+  :is(html.signed-in, html.likely-signed-in:not(.auth-ready)) .page-lists header.top { top: calc(env(safe-area-inset-top, 0px) + 6px); }
+}
+
+/* ---------- ADDED: assigning items to people ---------- */
+.assignee {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, #3b82c4 20%, transparent); color: var(--ink);
+}
+.assignee.is-me { background: color-mix(in srgb, #f0b232 30%, transparent); }
+.assign-pick { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.assign-pick select {
+  flex: 1; min-width: 0; padding: 8px 10px;
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); font-size: 15px;
+}
+.filters select[hidden] { display: none; }
+
+/* ADDED (data safety): banner on a list from before workspaces */
+.viewonly.legacy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--ink); }
+.viewonly.legacy[hidden] { display: none; }
+
+/* ---------- ADDED: folders drawn as section headers, and delete buttons on folders and lists ---------- */
+/* A folder is no longer a glass card. Its name is a big heading with an amber underline, like the floor headings inside a list.
+   (The old .room card look still belongs to the room cards on a list's own page.) */
+.folder { background: none; border: 0; box-shadow: none; }
+.folder-bar { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--accent); }
+.folder-title { flex: 1; min-width: 0; margin: 0; }
+.folder-head {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 10px 0;
+  background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer;
+}
+.folder-name {
+  flex: 1; min-width: 0; overflow-wrap: anywhere;
+  font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.05; letter-spacing: 0; text-transform: none;
+}
+.folder-head:hover .folder-name { color: var(--accent); }
+.folder-count { flex: none; font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.folder.open > .folder-bar .chev { transform: rotate(180deg); } /* flips the arrow when the folder is open */
+/* what's inside an open folder sits indented under the header, with a thin line down the side */
+.folder-body { padding: 4px 0 0 14px; margin-left: 4px; border-left: 1px solid var(--rule); }
+.folder-body > ul.jobs { margin: 0; padding: 12px 0 4px; }
+.folder-body .fproj-note { padding: 12px 0 0; }
+.folder-foot { display: flex; justify-content: flex-end; gap: 16px; padding: 0 0 6px; } /* "New list here / Rename" links */
+/* folders inside folders: a little smaller, with a thinner underline */
+.folder .folder .folder-name { font-size: 22px; }
+.folder .folder .folder-bar { border-bottom: 1px solid var(--rule); }
+.folder.drop-hover { border-radius: 12px; }
+
+/* Trash button. On a list it sits to the right of the row; on a folder it sits at the end of the header. */
+.icon-btn {
+  flex: none; display: grid; place-content: center; width: 48px; min-height: 48px; cursor: pointer;
+  color: var(--muted); background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .14); border-radius: 14px;
+}
+.icon-btn:hover, .icon-btn:focus-visible { color: var(--danger); border-color: var(--danger); }
+.folder-bar .icon-btn { width: 44px; min-height: 44px; background: none; border: 0; border-radius: 10px; }
+.job-row { display: flex; gap: 8px; align-items: stretch; } /* the list row and its trash button side by side */
+.job-row > a { flex: 1; min-width: 0; }
+.jconfirm { margin-top: 8px; }
+
+/* The project note inside an open folder is a sub header, not a button.
+   (Any link inside the lists area used to pick up the glass card look from "ul.jobs a", so it is reset here.) */
+.folder-body .fproj-note { display: grid; gap: 2px; margin: 0; padding: 12px 0 0; }
+.fproj-label { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+ul.jobs .fproj-note a.fproj-name {
+  display: inline; justify-self: start; min-height: 0; padding: 0;
+  background: none; border: 0; border-radius: 0; box-shadow: none; transform: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  font-family: var(--f-display); font-weight: 700; font-size: 22px; line-height: 1.1; color: var(--ink); text-decoration: none;
+}
+ul.jobs .fproj-note a.fproj-name:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; background: none; transform: none; }
+.fproj-hint { font-size: 13px; color: var(--muted); }
+/* FIXED: a signature is a transparent PNG, so it vanished on the dark list. It now sits on a white box. */
+.signed img {
+  display: block;
+  margin-top: 6px;
+  max-width: 200px;
+  max-height: 64px;
+  width: auto;
+  height: auto;
+  background: #fff;
+  padding: 4px 8px;
+  border: 1px solid rgba(0, 0, 0, .18);
+  border-radius: 6px;
+}

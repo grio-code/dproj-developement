@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.env.*
+*-adminsdk-*.json
+serviceAccount*.json
+node_modules/
+.env
+.env.*
+*serviceAccount*.json
+*credentials*.json
+.firebase/
+firebase-debug.log

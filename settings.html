@@ -1,0 +1,273 @@
+<!-- ©HomeHub LLC 2026 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Settings · HomeHub</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HomeHub">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0d1820">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="settings/settings.css?v=2" rel="stylesheet">
+<link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="firebase-starter/perms.js?v=1"></script> <!-- ADDED: who may do what (shared by every page) -->
+
+<script src="nav-bar/nav.js" defer></script>
+<script src="nav-bar/auth-ui.js" defer></script>
+<script src="settings/settings.js?v=5" defer></script>
+</head>
+<body>
+
+<!--  animated backdrop  -->
+<div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div>
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">HomeHub</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<main class="wrap st">
+  <div class="st-head">
+    <div class="eyebrow">Account</div>
+    <h1>Settings</h1>
+  </div>
+
+  <div class="st-msg" id="msg" role="status" aria-live="polite" hidden></div>
+
+  <div class="st-layout" id="stLayout" hidden>
+    <!-- Section links: a sidebar on desktop, a scrolling row of chips on phones -->
+    <nav class="st-toc" aria-label="Settings sections">
+      <a href="#user">Your profile</a>
+      <a href="#workspace">Workspace</a>
+      <a href="#members">Members</a>
+      <a href="#archive">Archive</a>
+      <a href="#admin" class="admin-only">Admin controls</a>
+      <a href="#legal">Legal &amp; Privacy</a>
+      <a href="#signout">Sign out</a>
+    </nav>
+
+    <div class="st-main">
+
+      <!-- ============ 1. User information ============ -->
+      <section class="st-card" id="user" aria-labelledby="userH">
+        <header class="st-card-h">
+          <h2 id="userH">Your profile</h2>
+          <p>How you appear to everyone in the workspace.</p>
+        </header>
+        <form id="userForm" novalidate>
+          <div class="st-photo">
+            <div class="st-pic st-pic--round" id="uPic"></div>
+            <div class="st-photo-btns">
+              <label class="btn">Change photo<input type="file" id="uPhoto" accept="image/png,image/jpeg,image/webp" hidden></label>
+              <button type="button" class="btn btn--quiet" id="uPhotoRemove">Remove</button>
+              <span class="f-err" id="uPhotoErr"></span>
+            </div>
+          </div>
+          <div class="st-grid">
+            <div class="f">
+              <label for="uName">Display name</label>
+              <input id="uName" maxlength="60" autocomplete="name" required>
+              <span class="f-err" id="uNameErr"></span>
+            </div>
+            <div class="f">
+              <label for="uUser">Username</label>
+              <input id="uUser" readonly>
+              <span class="f-hint">Set when you joined. Unique in this workspace.</span>
+            </div>
+            <div class="f">
+              <label for="uEmail">Email</label>
+              <input id="uEmail" readonly>
+              <span class="f-hint">Used to sign in.</span>
+            </div>
+            <div class="f">
+              <label>Role</label>
+              <div class="st-static"><span class="role" id="uRole"></span> <span class="st-dim" id="uJoined"></span></div>
+            </div>
+          </div>
+          <div class="st-actions">
+            <button type="submit" class="btn btn--primary" id="userSave">Save profile</button>
+            <button type="button" class="btn" id="pwReset">Email me a password reset link</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ============ 2. Workspace information ============ -->
+      <section class="st-card" id="workspace" aria-labelledby="wsH">
+        <header class="st-card-h">
+          <h2 id="wsH">Workspace</h2>
+          <p>The company account your lists, trades and folders are shared in.</p>
+        </header>
+        <div class="st-ws">
+          <div class="st-pic st-pic--logo" id="wPicView"></div>
+          <div>
+            <div class="st-ws-name" id="wNameView"></div>
+            <div class="st-dim" id="wSub"></div>
+          </div>
+        </div>
+        <dl class="st-facts">
+          <div><dt>Owner</dt><dd id="wOwner"></dd></div>
+          <div><dt>Admins</dt><dd id="wAdmins"></dd></div>
+          <div><dt>Created</dt><dd id="wCreated"></dd></div>
+          <div><dt>Members</dt><dd id="wCount"></dd></div>
+          <div><dt>Pending invites</dt><dd id="wPending"></dd></div>
+          <div class="st-facts-wide"><dt>Workspace ID</dt><dd class="mono" id="wId"></dd></div>
+        </dl>
+        <p class="f-hint member-only">Only admins can change the name and logo.</p>
+      </section>
+
+      <!-- ============ 3. People in the workspace ============ -->
+      <section class="st-card" id="members" aria-labelledby="memH">
+        <header class="st-card-h">
+          <h2 id="memH">Members</h2>
+          <p>Everyone who has joined, plus people who were invited and haven't joined yet. Everyone can check items off lists. Admins can do everything, including managing the workspace and its people. For everyone else, an admin chooses what they can do under Access: create or edit projects, change lists, move lists into projects, add to-dos and assign tasks.</p>
+        </header>
+        <ul class="st-people" id="memberList"></ul>
+        <h3 class="st-sub" id="inviteHead" hidden>Invited</h3>
+        <ul class="st-people" id="inviteList"></ul>
+      </section>
+
+      <!-- ============ 3b. Archive ============ -->
+      <section class="st-card" id="archive" aria-labelledby="arcH">
+        <header class="st-card-h">
+          <h2 id="arcH">Archive</h2>
+          <p>Archived content. Unarchive to put it back where it was, or delete it for good. Archiving a project archives its punch lists too, and unarchiving or deleting it does the same.</p>
+        </header>
+        <ul class="st-people" id="archiveList"></ul>
+        <p class="f-hint" id="archiveEmpty" hidden>Nothing is archived. Use Archive project at the bottom of a project’s page.</p>
+        <p class="f-hint" id="archiveFailed" hidden>Couldn’t load the archive. Refresh to try again.</p>
+        <p class="f-hint" id="archiveNote" hidden>You don’t have access to unarchive or delete these. Ask an admin.</p>
+      </section>
+
+      <!-- ============ 4. Admin controls (admins only) ============ -->
+      <section class="st-card admin-only" id="admin" aria-labelledby="admH">
+        <header class="st-card-h">
+          <h2 id="admH">Admin controls</h2>
+          <p>Only admins can see this section. To add another admin, such as a co-founder, switch on “Admin” next to them in Members.</p>
+        </header>
+
+        <form id="wsForm" class="st-block" novalidate>
+          <h3 class="st-sub">Workspace details</h3>
+          <div class="st-photo">
+            <div class="st-pic st-pic--logo" id="wPic"></div>
+            <div class="st-photo-btns">
+              <label class="btn">Upload logo<input type="file" id="wLogo" accept="image/png,image/jpeg,image/webp" hidden></label>
+              <button type="button" class="btn btn--quiet" id="wLogoRemove">Remove</button>
+              <span class="f-err" id="wLogoErr"></span>
+            </div>
+          </div>
+          <div class="f">
+            <label for="wName">Workspace name</label>
+            <input id="wName" maxlength="50" required>
+            <span class="f-err" id="wNameErr"></span>
+          </div>
+          <div class="st-actions">
+            <button type="submit" class="btn btn--primary" id="wsSave">Save workspace</button>
+          </div>
+        </form>
+
+        <form id="inviteForm" class="st-block" novalidate>
+          <h3 class="st-sub">Invite people</h3>
+          <div class="f">
+            <label for="iEmails">Email addresses</label>
+            <textarea id="iEmails" rows="3" placeholder="name@company.com, another@company.com"></textarea>
+            <span class="f-hint">Separate with commas or new lines. Only these addresses will be able to join.</span>
+            <span class="f-err" id="iEmailsErr"></span>
+          </div>
+          <div class="st-actions">
+            <button type="submit" class="btn btn--primary" id="inviteBtn">Invite</button>
+          </div>
+          <div class="st-result" id="inviteResult" role="status" hidden></div>
+        </form>
+
+        <div class="st-block">
+          <h3 class="st-sub">Invite link</h3>
+          <div class="f">
+            <label for="shareLink">Only people you've invited above can join with this link</label>
+            <div class="st-copy">
+              <input id="shareLink" readonly>
+              <button type="button" class="btn" id="copyLink">Copy</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Legal documents -->
+      <section class="st-card" id="legal" aria-labelledby="legalH">
+        <header class="st-card-h"><h2 id="legalH">Legal &amp; Privacy</h2><p>Review the legal information for <i>HomeHub LLC</i>. Terms and privacy documents are drafts pending legal review.</p></header>
+        <ul class="st-people">
+          <li><a class="btn" href="copyright.html">Copyright Notice</a></li>
+          <li><a class="btn" href="license.html">All Rights Reserved License</a></li>
+          <li><a class="btn" href="terms.html">Terms of Service</a></li>
+          <li><a class="btn" href="privacy.html">Privacy Policy</a></li>
+        </ul>
+      </section>
+
+      <!-- ============ 5. Sign out ============ -->
+      <section class="st-card" id="signout" aria-labelledby="outH">
+        <header class="st-card-h">
+          <h2 id="outH">Sign out</h2>
+          <p>Sign out of <i>HomeHub</i> on this device. Your projects and lists stay in the workspace.</p>
+        </header>
+        <div class="st-actions">
+          <button type="button" class="btn btn--danger" id="signOutBtn">Sign out</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <a href="index.html" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <a href="index.html#projects" aria-label="My Projects">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
+      <span class="dock-tip">My Projects</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New Punch List</button>
+    <button role="menuitem" onclick="location.href='index.html#dailylogs'">New Daily Log <span class="soon">Soon</span></button>
+  </div>
+</nav>
+<footer class="site-copy">© <i>HomeHub LLC</i> 2026</footer>
+</body>
+</html>

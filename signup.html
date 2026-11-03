@@ -1,0 +1,224 @@
+<!-- ©HomeHub LLC 2026 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Create your workspace · HomeHub</title>
+<meta name="theme-color" content="#0d1820">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<!-- Paths assume this file sits next to login.html and allLists.html -->
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="all-lists/list.css" rel="stylesheet">
+<link href="login-logout/login.css" rel="stylesheet">
+<link href="workspace/workspace.css" rel="stylesheet">
+<link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
+
+<!-- Firebase (compat build) + your project settings. These must load BEFORE signup.js -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="nav-bar/nav.js" defer></script>
+<script src="sign-up/sign-up.js" defer></script>
+</head>
+<body>
+
+<!--  animated backdrop  -->
+<div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div>
+
+<!-- Goo filter for the dock -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">HomeHub</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<!-- Bottom dock (kept so nav.js works; it stays hidden here because nobody is "signed in" to the app yet) -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <a href="index.html" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <a href="index.html#projects" aria-label="My Projects">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
+      <span class="dock-tip">My Projects</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New Punch List</button>
+    <button role="menuitem" onclick="location.href='index.html#dailylogs'">New Daily Log <span class="soon">Soon</span></button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="login">
+    <div class="titlebar"><h1 id="stepTitle">Create your workspace</h1></div>
+
+    <!-- Progress. JS marks the finished and current steps. -->
+    <ol class="ws-steps" id="wsSteps" aria-label="Progress">
+      <li data-s="email">Email</li>
+      <li data-s="verify">Verify</li>
+      <li data-s="workspace">Workspace</li>
+      <li data-s="profile">Profile</li>
+      <li data-s="invite">Invite</li>
+    </ol>
+
+    <div class="login-card ws-form">
+
+      <!-- STEP 1: Enter your email -->
+      <section class="step" data-step="email">
+        <p id="emailIntro">Use your work email so teammates can find you. We'll send you a link to confirm it.</p>
+        <form class="login-form" id="emailForm" novalidate>
+          <div class="f">
+            <label for="wEmail">Email</label>
+            <input id="wEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="you@company.com" required>
+            <div class="f-err" id="wEmailErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="emailBtn">Continue</button>
+          <div class="login-links"><a class="link" href="login.html">Already have an account? Log in</a></div>
+        </form>
+      </section>
+
+      <!-- STEP 2: Verify your email -->
+      <section class="step" data-step="verify" hidden>
+        <p>We sent a confirmation link to <b id="verifyEmail"></b>. Open it on this device. This page will continue on its own once you do.</p>
+        <p class="f-hint">Can't find it? Check your spam folder.</p>
+        <div class="login-links">
+          <button type="button" class="link" id="resendBtn">Resend email</button>
+          <button type="button" class="link" id="changeEmailBtn">Use a different email</button>
+        </div>
+      </section>
+
+      <!-- STEP 2b: the link was opened on a different device or browser, so we need the email again -->
+      <section class="step" data-step="confirmEmail" hidden>
+        <p>To finish confirming, type the email address the link was sent to.</p>
+        <form class="login-form" id="confirmForm" novalidate>
+          <div class="f">
+            <label for="cEmail">Email</label>
+            <input id="cEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="you@company.com" required>
+            <div class="f-err" id="cEmailErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="confirmBtn">Confirm</button>
+        </form>
+      </section>
+
+      <!-- STEP 3: Name your workspace -->
+      <section class="step" data-step="workspace" hidden>
+        <p>This is the name of your team, company or project. Your teammates will see it when they join.</p>
+        <form class="login-form" id="workspaceForm" novalidate>
+          <div class="f">
+            <label for="wName">Workspace name</label>
+            <input id="wName" type="text" maxlength="50" autocomplete="organization" placeholder="Acme Builders" required>
+            <div class="f-hint"><span id="wNameCount">0</span>/50</div>
+            <div class="f-err" id="wNameErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="workspaceBtn">Create workspace</button>
+        </form>
+      </section>
+
+      <!-- STEP 4: Set up your profile -->
+      <section class="step" data-step="profile" hidden>
+        <p id="profileIntro">Add your name and a photo so your team knows who you are.</p>
+        <form class="login-form" id="profileForm" novalidate>
+          <div class="f">
+            <label for="pName">Display name</label>
+            <input id="pName" type="text" maxlength="60" autocomplete="name" placeholder="Jane Smith" required>
+            <div class="f-err" id="pNameErr" role="alert"></div>
+          </div>
+          <div class="f">
+            <label for="pUser">Username</label>
+            <input id="pUser" type="text" maxlength="30" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="jane.smith" required>
+            <div class="f-hint">3 to 30 characters: lowercase letters, numbers, periods, dashes and underscores.</div>
+            <div class="f-err" id="pUserErr" role="alert"></div>
+          </div>
+          <div class="f">
+            <span class="lbl" id="photoLabel">Profile photo (optional)</span>
+            <label class="photo-drop" id="photoDrop">
+              <input id="pPhoto" type="file" accept="image/png,image/jpeg,image/webp" aria-labelledby="photoLabel">
+              <span class="photo-preview" id="photoPreview">No photo</span>
+              <span class="photo-text">
+                <b id="photoName">Choose or drop an image</b>
+                <span class="f-hint">PNG, JPG or WebP, up to 2 MB</span>
+              </span>
+              <button type="button" class="btn photo-remove" id="photoRemove" hidden>Remove</button>
+            </label>
+            <div class="f-err" id="pPhotoErr" role="alert"></div>
+          </div>
+          <div class="f">
+            <label for="pPassword">Password</label>
+            <div class="pw-wrap">
+              <input id="pPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+              <button type="button" class="pw-toggle" id="pwToggle" aria-controls="pPassword" aria-pressed="false">Show</button>
+            </div>
+            <div class="f-hint">You'll use this with your email to log in next time.</div>
+            <div class="f-err" id="pPasswordErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="profileBtn">Continue</button>
+        </form>
+      </section>
+
+      <!-- STEP 5: Invite team members (workspace creators only) -->
+      <section class="step" data-step="invite" hidden>
+        <p>Add the email addresses of coworkers you want to invite, separated by commas, spaces or new lines. You can skip this and invite people later.</p>
+        <form class="login-form" id="inviteForm" novalidate>
+          <div class="f">
+            <label for="iEmails">Teammate emails</label>
+            <textarea id="iEmails" rows="4" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="sam@company.com, alex@company.com"></textarea>
+            <div class="f-err" id="iEmailsErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="inviteBtn">Invite</button>
+          <div class="login-links"><button type="button" class="link" id="skipInvite">Skip for now</button></div>
+        </form>
+      </section>
+
+      <!-- DONE -->
+      <section class="step" data-step="done" hidden>
+        <p id="doneText"></p>
+        <p class="f-hint" id="doneInvites" hidden></p>
+        <div id="doneSend" hidden><div style="display:grid;gap:8px;margin-bottom:14px">
+          <div class="f-hint">Send it with:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <a class="btn" id="doneGmail" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Gmail</a>
+            <a class="btn" id="doneOutlook" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Outlook</a>
+            <a class="btn" id="doneMail" href="#" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Email app</a>
+            <button type="button" class="btn" id="doneCopy">Copy text</button>
+          </div>
+        </div></div>
+        <div class="f" id="linkRow" hidden>
+          <label for="shareLink">Invite link</label>
+          <input id="shareLink" type="text" readonly>
+          <div class="f-hint">Only people you've invited by email can join with this link.</div>
+          <button type="button" class="btn" id="copyLink">Copy link</button>
+        </div>
+        <button class="btn primary" type="button" id="goApp" style="width:100%;min-height:48px;margin-top:14px">Get Started</button>
+      </section>
+
+      <div class="banner login-msg" id="msg" role="alert" hidden></div>
+    </div>
+  </div>
+</div>
+<footer class="site-copy">© <i></i>HomeHub LLC</i> 2026</footer>
+</body>
+</html>

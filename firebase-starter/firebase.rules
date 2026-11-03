@@ -1,0 +1,261 @@
+// ©HomeHub LLC 2026
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function isMember(wid) {
+      return signedIn() && exists(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid));
+    }
+    function isOwner(wid) {
+      return signedIn() && get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerId == request.auth.uid;
+    }
+    function memberDoc(wid) {
+      return get(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid));
+    }
+    function ownerOf(wid) { return get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerId; }
+    // Admins run the workspace: the owner (who created it) plus any member an admin has made an admin
+    // (for example a second founder or CEO). Admins can rename the workspace, change its logo, invite and
+    // remove people, choose who can edit lists, and make other members admins.
+    function isAdmin(wid) {
+      return signedIn() && (isOwner(wid)
+        || (isMember(wid) && memberDoc(wid).data.get('admin', false) == true));
+    }
+    // Signed in with a verified email that has a pending invitation to this workspace
+    function isInvited(wid) {
+      return signedIn() && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/workspaces/$(wid)/invites/$(request.auth.token.email.lower()));
+    }
+    // CHANGED: what a member may do is now split into permissions an admin switches on one by one
+    // (Settings > Members > Access; the list is in firebase-starter/perms.js):
+    //   createProjects, manageProjects, manageLists, moveLists, addTodos, assignTasks
+    // Admins can do everything. A member saved before permissions existed (canEdit: true, no perms) has them all.
+    function can(wid, p) {
+      return signedIn() && (isAdmin(wid)
+        || (isMember(wid) && (
+             (('perms' in memberDoc(wid).data) && memberDoc(wid).data.perms.get(p, false) == true)
+          || (!('perms' in memberDoc(wid).data) && memberDoc(wid).data.get('canEdit', false) == true))));
+    }
+    // Can change lists (rooms, items, details, folders, trades): the "Create, edit and delete lists" permission
+    function canEditWs(wid) { return can(wid, 'manageLists'); }
+    function jobWs(jobId) { return get(/databases/$(database)/documents/jobs/$(jobId)).data.workspaceId; }
+    // ADDED: a list that was archived together with its project, and the signed-in person may delete projects.
+    // Lets Settings > Archive > Delete clear out that list's rooms and items too.
+    function projArchivedJob(jobId) {
+      return get(/databases/$(database)/documents/jobs/$(jobId)).data.get('archivedWithProject', '') != ''
+        && can(jobWs(jobId), 'manageProjects');
+    }
+    // The write changes only these fields
+    function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function validName(n) { return n is string && n.size() > 0 && n.size() <= 50; }
+    // Company logo: optional, a small image data URL (settings.html shrinks it to 256px)
+    function validLogo(d) { return !('logo' in d) || d.logo == null || (d.logo is string && d.logo.size() < 400000); }
+
+    // ADDED: projects and their clients
+    function projWs(pid) { return get(/databases/$(database)/documents/projects/$(pid)).data.workspaceId; }
+    function projArchived(pid) { return get(/databases/$(database)/documents/projects/$(pid)).data.get('archived', false) == true; }
+    function shortStr(d, k, n) { return !(k in d) || (d[k] is string && d[k].size() <= n); }
+    function validClient(d) {
+      return d.keys().hasOnly(['firstName', 'lastName', 'displayName', 'street', 'city', 'state', 'zip', 'phone', 'email',
+                               'lender', 'buyerAttorney', 'realtor', 'broker', 'archived', 'archivedAt',
+                               'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 80
+        && shortStr(d, 'firstName', 40) && shortStr(d, 'lastName', 40) && shortStr(d, 'street', 120)
+        && shortStr(d, 'city', 60) && shortStr(d, 'state', 2) && shortStr(d, 'zip', 10) && shortStr(d, 'phone', 30)
+        && shortStr(d, 'email', 120) && shortStr(d, 'lender', 80) && shortStr(d, 'buyerAttorney', 80)
+        && shortStr(d, 'realtor', 80) && shortStr(d, 'broker', 80)
+        && (!('archived' in d) || d.archived is bool);
+    }
+    // What clients may see on a project: view-only switches, all true/false. No edit switch exists.
+    function validClientAccess(d) {
+      return !('clientAccess' in d) || (d.clientAccess is map
+        && d.clientAccess.keys().hasOnly(['portal', 'details', 'timeline', 'progress', 'punchItems', 'dailyLogs', 'files', 'notify']));
+    }
+
+    // ---------- workspaces ----------
+    match /workspaces/{wid} {
+      // Anyone can create their own workspace. Reading is one doc at a time (no listing everybody's workspaces).
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid && validName(request.resource.data.name);
+      allow get: if signedIn() && (resource.data.ownerId == request.auth.uid || isMember(wid) || isInvited(wid));
+      allow update: if isAdmin(wid)
+                    && request.resource.data.ownerId == resource.data.ownerId
+                    && validName(request.resource.data.name)
+                    && validLogo(request.resource.data);
+
+      // The people in the workspace
+      match /members/{memberId} {
+        allow read: if isMember(wid);
+        // You can only add yourself: as owner of a workspace you created, or as a member if you were invited
+        // Nobody can give themselves editing or admin access when they join
+        allow create: if signedIn() && memberId == request.auth.uid
+                      && request.resource.data.get('canEdit', false) == false
+                      && request.resource.data.get('admin', false) == false
+                      && !('perms' in request.resource.data)
+                      && ((isOwner(wid) && request.resource.data.role == 'owner')
+                          || (isInvited(wid) && request.resource.data.role == 'member'));
+        // Edit your own profile, but never your own role, editing access or admin access.
+        // Admins can switch "Can edit lists" and "Admin" on or off for other members (and change nothing else on
+        // their record). The owner who created the workspace is always an admin: nobody can change or remove them.
+        allow update: if (signedIn() && memberId == request.auth.uid
+                          && request.resource.data.role == resource.data.role
+                          && request.resource.data.get('canEdit', false) == resource.data.get('canEdit', false)
+                          && request.resource.data.get('admin', false) == resource.data.get('admin', false)
+                          && request.resource.data.get('perms', null) == resource.data.get('perms', null))
+                      || (isAdmin(wid) && memberId != request.auth.uid && memberId != ownerOf(wid)
+                          && onlyChanges(['canEdit', 'admin', 'perms'])
+                          && request.resource.data.get('canEdit', false) is bool
+                          && request.resource.data.get('admin', false) is bool
+                          && (!('perms' in request.resource.data) || request.resource.data.perms is map));
+        allow delete: if (isAdmin(wid) && memberId != ownerOf(wid)) || (signedIn() && memberId == request.auth.uid);
+      }
+
+      // One doc per invited email (the doc id is the lowercase email)
+      match /invites/{inviteId} {
+        allow get: if isMember(wid) || (signedIn() && request.auth.token.email.lower() == inviteId);
+        allow list: if isMember(wid);
+        allow create: if isMember(wid) && inviteId == request.resource.data.email;
+        allow delete: if isMember(wid) || (signedIn() && request.auth.token.email.lower() == inviteId);
+      }
+
+      // Username claims so two people can't use the same username in one workspace
+      match /usernames/{uname} {
+        allow read: if isMember(wid) || isOwner(wid) || isInvited(wid);
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                      && (isMember(wid) || isOwner(wid) || isInvited(wid));
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
+
+      // Shared trades, levels and folders: everyone in the workspace can read them, only editors can change them
+      // CHANGED (data safety): the shared settings record can't be deleted, and a write can't drop the folders,
+      // trades or levels fields once they exist (a save made before the record loaded would otherwise wipe them).
+      match /settings/{docId} {
+        allow read: if isMember(wid);
+        allow create: if canEditWs(wid);
+        allow update: if canEditWs(wid)
+                      && (!('folders' in resource.data) || request.resource.data.folders is map)
+                      && (!('trades' in resource.data) || request.resource.data.trades is list)
+                      && (!('floors' in resource.data) || request.resource.data.floors is list);
+      }
+    }
+
+    // ---------- projects ----------
+    // A project (made on newProject.html) holds its details and timeline. Its punch lists are jobs with projectId set.
+    // Everyone in the workspace can see projects. CHANGED: creating needs the "Create projects" permission; changing,
+    // archiving (including its stage) and deleting need "Edit, archive and delete projects". Admins can do all of it.
+    match /projects/{projectId} {
+      allow get: if isMember(resource.data.workspaceId);
+      allow list: if isMember(resource.data.workspaceId);
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid
+                    && can(request.resource.data.workspaceId, 'createProjects')
+                    && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80;
+      // CHANGED: nobody can move a project to another stage (status: open / warranty / closed) except an admin.
+      // The app no longer offers it at all; this keeps a way to correct a project from the console.
+      // ADDED: clientAccess is what the project's clients may see. It holds view-only switches and nothing else,
+      // so clients can never be given a way to change anything.
+      allow update: if can(resource.data.workspaceId, 'manageProjects')
+                    && request.resource.data.workspaceId == resource.data.workspaceId
+                    && request.resource.data.ownerId == resource.data.ownerId
+                    && (request.resource.data.get('status', 'open') == resource.data.get('status', 'open')
+                        || isAdmin(resource.data.workspaceId))
+                    && validClientAccess(request.resource.data);
+      // CHANGED (data safety): only an archived project can be deleted (Settings > Archive). Archive first, always.
+      allow delete: if can(resource.data.workspaceId, 'manageProjects') && resource.data.get('archived', false) == true;
+
+      // ADDED: the project's clients (project-clients.html). Contact details only: there is no field that could let a
+      // client change anything. Everyone in the workspace can see them; "Edit, archive and delete projects" adds and
+      // edits them. Removing a client archives it (archived: true). They are deleted for good only together with an
+      // archived project (Settings > Archive > Delete).
+      match /clients/{clientId} {
+        allow read: if isMember(projWs(projectId));
+        allow create, update: if can(projWs(projectId), 'manageProjects') && validClient(request.resource.data);
+        allow delete: if can(projWs(projectId), 'manageProjects') && projArchived(projectId);
+      }
+    }
+
+    // ---------- lists ----------
+    // Editors (admins + members allowed to edit) can change anything on a list.
+    // Everyone else, including people who open a shared link, can only check items off.
+    match /jobs/{jobId} {
+      // Anyone with the link can open one list (this is what shared links use)
+      allow get: if true;
+      // Only people in the list's workspace can browse lists
+      // CHANGED: people can also find their own lists from before workspaces (no workspaceId), so the app can bring them back
+      // CHANGED: the owner check comes first so the "find my older lists" query (which has no workspaceId) is
+      // decided without evaluating isMember() on a missing field
+      allow list: if (signedIn() && resource.data.get('ownerId', '') == request.auth.uid)
+                  || isMember(resource.data.workspaceId);
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid
+                    && canEditWs(request.resource.data.workspaceId);
+      // CHANGED: people who can manage projects can also delete lists archived with a project (Settings > Archive > Delete)
+      // CHANGED (data safety): only an archived list can be deleted (Settings > Archive). Archive first, always.
+      allow delete: if resource.data.get('archived', false) == true
+                    && (canEditWs(resource.data.workspaceId)
+                        || (can(resource.data.workspaceId, 'manageProjects') && resource.data.get('archivedWithProject', '') != ''));
+      // Nobody can change who owns the list or which workspace it is in.
+      // Non-editors can only update the open/total counts, which refresh when they check items off.
+      // CHANGED: "Move lists into projects" may change only the list's project, and "Edit, archive and delete projects"
+      // may archive or unarchive lists together with their project.
+      // ADDED: a list from before workspaces (no workspaceId) can be put into a workspace you belong to, by its owner,
+      // or by anyone who opens it by its link if it has no owner at all. Nothing else may change in that write.
+      allow update: if signedIn() && !('workspaceId' in resource.data)
+                    && resource.data.get('ownerId', '') in ['', request.auth.uid]
+                    && request.resource.data.ownerId == request.auth.uid
+                    && isMember(request.resource.data.workspaceId)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workspaceId', 'ownerId', 'updatedAt']);
+      allow update: if request.resource.data.ownerId == resource.data.ownerId
+                    && request.resource.data.workspaceId == resource.data.workspaceId
+                    && (canEditWs(resource.data.workspaceId)
+                        || onlyChanges(['openCount', 'totalCount', 'updatedAt'])
+                        || (can(resource.data.workspaceId, 'moveLists') && onlyChanges(['projectId', 'updatedAt']))
+                        || (can(resource.data.workspaceId, 'manageProjects')
+                            && onlyChanges(['archived', 'archivedAt', 'archivedWith', 'archivedWithProject', 'updatedAt'])));
+
+      // Item status (done, note, trade). Checking off only changes done / doneAt / signedBy / signature / updatedAt.
+      // CHANGED: marking an item done now requires a signature (the signer's typed name + a drawn signature image).
+      match /items/{itemId} {
+        allow read: if true;
+        allow delete: if canEditWs(jobWs(jobId)) || projArchivedJob(jobId);
+        // CHANGED: "Assign tasks" may also set who an item is assigned to (assignedTo, assignedName, assignedAt, assignedBy)
+        allow create: if (!newlyDone() || hasSig(request.resource.data))
+                      && (canEditWs(jobWs(jobId))
+                          || (request.resource.data.keys().hasOnly(['done', 'doneAt', 'signedBy', 'signature', 'note', 'trade', 'updatedAt',
+                                                                    'assignedTo', 'assignedName', 'assignedAt', 'assignedBy'])
+                              && request.resource.data.get('note', '') == ''
+                              && request.resource.data.get('trade', '') == ''
+                              && (request.resource.data.get('assignedTo', '') == '' || can(jobWs(jobId), 'assignTasks'))));
+        allow update: if (!newlyDone() || hasSig(request.resource.data))
+                      && (canEditWs(jobWs(jobId))
+                          || onlyChanges(['done', 'doneAt', 'signedBy', 'signature', 'updatedAt'])
+                          || (can(jobWs(jobId), 'assignTasks')
+                              && onlyChanges(['assignedTo', 'assignedName', 'assignedAt', 'assignedBy', 'updatedAt'])));
+      }
+      // ADDED: true when this write switches the item from not done to done
+      function newlyDone() {
+        return request.resource.data.get('done', false) == true
+          && (resource == null || resource.data.get('done', false) != true);
+      }
+      // ADDED: a name (1-60 characters) and a PNG signature image under about 100 KB
+      function hasSig(d) {
+        return d.get('signedBy', '') is string && d.get('signedBy', '').size() > 0 && d.get('signedBy', '').size() <= 60
+          && d.get('signature', '') is string && d.get('signature', '').size() < 100000
+          && d.get('signature', '').matches('data:image/png;base64,[A-Za-z0-9+/=]+');
+      }
+      // The items themselves, rooms, and hidden rooms: editors only
+      // CHANGED: the "Add to-dos" permission may add new items (but not change or remove them)
+      match /{coll}/{docId} {
+        allow read: if coll in ['custom', 'rooms', 'hidden'];
+        allow write: if coll in ['custom', 'rooms', 'hidden'] && canEditWs(jobWs(jobId));
+        allow delete: if coll in ['custom', 'rooms', 'hidden'] && projArchivedJob(jobId);
+        allow create: if coll == 'custom' && can(jobWs(jobId), 'addTodos')
+                      && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 160;
+      }
+    }
+
+    // ---------- each person's own profile ----------
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

@@ -1,0 +1,300 @@
+<!-- ©HomeHub LLC 2026 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover lets the page draw edge to edge on iPhones with a notch; safe-area padding is handled in CSS below -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Lists</title>
+<!-- iOS "Add to Home Screen" settings: makes it open full screen like a native app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="My Lists">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Browser toolbar color, matched to light and dark mode backgrounds -->
+<meta name="theme-color" content="#0d1820">
+<!-- PWA manifest and icons used when the app is installed to a home screen -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<!-- Google Fonts: Barlow Condensed (headings), IBM Plex Mono (labels), IBM Plex Sans (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<script src="nav-bar/nav.js" defer></script>
+<link href="dashboard/dashboard.css?v=10" rel="stylesheet"> <!-- ADDED: the dashboard's left sidebar -->
+<link href="all-lists/list.css?v=13" rel="stylesheet">
+<!-- ADDED: same as the home page. Returning signed-in users get the sidebar layout right away, with no flash of the top bar -->
+<script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
+<link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet --> 
+<!-- Firebase libraries (compat build) and your project settings. These must load BEFORE allLists.js -->
+<!-- CHANGED: these were listed twice; each one now loads once, in the same order as the other pages -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="firebase-starter/perms.js?v=1"></script> <!-- ADDED: who may do what (shared by every page) -->
+<script src="firebase-starter/legacy-data.js?v=2"></script> <!-- ADDED: brings back lists from before workspaces -->
+<script src="nav-bar/auth-ui.js" defer></script>
+<script src="all-lists/allLists.js?v=16" defer></script> <!-- CHANGED: ?v=12 makes browsers load the new version. Raise the number each time you change this file. -->
+<script src="dashboard/side-menu.js?v=1" defer></script> <!-- ADDED: hamburger menu on phones and iPads -->
+
+</head>
+<body class="page-lists"> <!-- ADDED: page-lists turns on the sidebar layout in list.css -->
+
+<!--  animated backdrop  -->
+<!-- <div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div> -->
+<div class="backdrop" aria-hidden="true"></i><i class="bd-grid"></i></div>
+
+
+<!-- Navigation -->
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">
+    <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
+    <!-- LOGO/NAME -->
+    HomeHub
+  </a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
+    <span class="fnav-pill" aria-hidden="true"></span>
+    <!-- <a href="index.html" aria-current="page">Home</a>
+    <a href="calendar.html">Calender</a>
+    <a href="allLists.html">Lists</a>
+    <a href="dailyLogs.html">Daily Logs</a> -->
+  </nav>
+  <div class="fnav-actions">
+    <!-- <a class="fnav-btn fnav-btn--ghost" href="login">Login</a>
+    <a class="fnav-btn fnav-btn--primary" href="signup">Sign up</a> -->
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <!-- Home -->
+    <a href="index.html" aria-label="Home"> <!-- CHANGED: no longer marked as the current page (this is My Lists, not Home) -->
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <!-- Calendar -->
+    <!-- <a href="calendar.html" aria-label="Calendar">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
+      <span class="dock-tip">Calendar</span>
+    </a> -->
+
+    <!-- Lists -->
+    <a href="index.html#projects" aria-label="My Projects">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
+      <span class="dock-tip">My Projects</span>
+    </a>
+
+    <!-- Daily Logs -->
+    <!-- <a href="dailyLogs.html" aria-label="Daily Logs">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
+      <span class="dock-tip">Daily Logs</span>
+    </a> -->
+
+    <!-- Messages -->
+    <!-- <a href="messages.html" aria-label="Messages">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
+      <span class="dock-tip">Messages</span>
+    </a> -->
+
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <!-- <button role="menuitem">New Event</button> -->
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+    <button role="menuitem" onclick="location.href='index.html#dailylogs'">New Daily Log <span class="soon">Soon</span></button>
+    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
+  </div>
+</nav>
+<!-- ADDED: the dashboard's left sidebar, so My Lists sits in the same layout as Dashboard and My projects.
+     Shown to signed-in people only; guests opening a shared link get the top bar instead. allLists.js fills in the workspace and project picker. -->
+<div class="db" id="db">
+  <!-- ADDED: phone and iPad bar. The sidebar below becomes a slide-out menu opened with this button (see dashboard/side-menu.js) -->
+  <div class="db-mbar db-glass">
+    <button type="button" class="db-burger" id="dbBurger" aria-controls="dbSide" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <a class="db-logo" href="index.html#dashboard">HomeHub</a>
+  </div>
+  <div class="db-scrim" id="dbScrim" hidden></div>
+  <aside class="db-side db-glass" id="dbSide" aria-label="Menu">
+    <button type="button" class="db-close" id="dbClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="db-brand">
+      <a class="db-logo" href="index.html#dashboard">HomeHub</a>
+      <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
+    </div>
+    <div class="db-jobs">
+      <label for="dbJob">Project</label>
+      <div class="db-select">
+        <select id="dbJob">
+          <option value="">All projects</option>
+        </select>
+      </div>
+      <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-project.html">New project</a>
+    </div>
+  <nav class="db-nav" aria-label="Workspace sections">
+    <a href="index.html#dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+    <a href="index.html#projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>My projects</a>
+    <hr>
+    <a href="allLists.html" class="db-nav-lists" id="navLists" aria-current="page"><svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>Lists</a>
+    <a href="index.html#dailylogs"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>Daily Logs<span class="soon">Soon</span></a>
+    <a href="index.html#schedule"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule<span class="soon">Soon</span></a>
+    <a href="index.html#files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files<span class="soon">Soon</span></a>
+    <a href="index.html#selections"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/><path d="M13 6.5h7.5M3.5 17.5H11"/></svg>Selections<span class="soon">Soon</span></a>
+    <a href="index.html#messages"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Messages<span class="soon">Soon</span></a>
+    <hr>
+    <a href="settings.html" class="db-nav-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Settings</a>
+  </nav>
+  </aside>
+  <div class="db-main">
+<div class="wrap">
+  <!-- ===== SCREEN 1: Jobs list (home). Hidden/shown by JS. ===== -->
+  <div id="jobsView" hidden>
+    <div class="titlebar">
+      <!-- CHANGED: small label above the title and a short intro under it, like the Settings and New project pages -->
+      <div class="eyebrow">Punch lists</div>
+      <h1>My Lists</h1>
+      <p class="lede">Every punch list in your workspace. Group them into folders. A folder that holds a project's list joins that project.</p>
+    </div>
+    <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
+    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-starter/firebase-config.js</b> to share them.</div>
+    <div class="tools" style="margin-top:16px">
+      <button type="button" class="btn primary edit-only" id="newJob">New list</button>
+      <!-- ADDED: button that shows/hides the "create a folder" form below -->
+      <button type="button" class="btn edit-only" id="newFolder">New folder</button>
+      <span class="saved" id="jobsSaved"></span>
+    </div>
+    <!-- ADDED: form for naming a new folder. Hidden until "New folder" is tapped. -->
+    <form id="addFolderForm" hidden>
+      <input id="newFolderName" type="text" maxlength="40" placeholder="Folder name" aria-label="New folder name">
+      <button class="btn primary" type="submit">Create</button>
+    </form>
+    <!-- ADDED: small tip about dragging. Shown by renderJobs() only when there is at least one folder and one list. -->
+    <p class="when" id="dragHint" style="margin:12px 0 0" hidden>Tip: press and hold a list or a folder, then drag it onto a folder.</p>
+    <!-- Filled in by renderJobs() -->
+    <ul class="jobs" id="jobs"></ul>
+    <!-- Dismissible tip for installing the app on an iPhone home screen -->
+    <div class="tip" id="tip">
+      <p><b>Put it on your iPhone:</b> in Safari, tap the Share button, then <b>Add to Home Screen</b>. It opens like an app from then on.</p>
+      <button type="button" class="x" id="tipX" aria-label="Hide tip">×</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: One job (a single punch list). Hidden/shown by JS. ===== -->
+  <div id="jobView" hidden>
+    <div class="titlebar">
+      <button type="button" class="back" id="backBtn">‹ All Lists </button>
+      <div class="row1">
+        <div>
+          <!-- <div class="eyebrow">Modern Haven Homes</div> -->
+          <!-- CHANGED: this heading used to just say "Punch List". It now has an id so the script can fill it with "Community - Lot" from the job info fields below. -->
+          <h1 id="jobTitle"> New List</h1>
+        </div>
+        <!-- Live count of open items; updated by render() -->
+        <div class="count"><div class="big" id="openN">0</div><div class="lbl" id="openL">open items</div></div>
+      </div>
+    </div>
+    <!-- Job details. data-meta tells the JS which field of state.meta each input edits. -->
+    <div class="jobinfo" id="jobinfo">
+      <div class="f"><label for="jDate">Date</label><input id="jDate" type="date" data-meta="date"></div>
+      <div class="f w2"><label for="jCommunity">Community</label><input id="jCommunity" type="text" maxlength="60" data-meta="community" placeholder="Community name"></div>
+      <div class="f w2"><label for="jAddress">Address</label><input id="jAddress" type="text" maxlength="100" data-meta="address" placeholder="Street address"></div>
+      <div class="f"><label for="jLot">Lot #</label><input id="jLot" type="text" maxlength="20" data-meta="lot" placeholder="Lot"></div>
+      <!-- ADDED: free-text description of the job, under Address and Lot #. Saves like the other fields through data-meta. -->
+      <div class="f desc"><label for="jDesc">Description</label><textarea id="jDesc" rows="2" maxlength="1000" data-meta="description" placeholder="Notes about this job, like scope, access or gate code"></textarea></div>
+      <!-- ADDED: choose which folder this list lives in. Options are filled in by applyFolders(). It has no data-meta attribute because it saves through its own change listener. -->
+      <div class="f full edit-only"><label for="jFolder">Folder</label><select id="jFolder" aria-label="Folder"></select></div>
+    </div>
+    <!-- Sticky header: progress bar, filters, and toolbar -->
+    <header class="top">
+      <div class="gauge" role="progressbar" aria-label="Punch list completion" aria-valuemin="0" aria-valuemax="100" id="gauge"><i id="gaugeFill"></i></div>
+      <div class="filters">
+        <!-- Filter by status -->
+        <select id="showF" aria-label="Show"><option value="all">All items</option><option value="open">Open items</option><option value="done">Completed</option></select>
+        <!-- Filter by trade; options are filled in by applyTrades() -->
+        <select id="tradeF" aria-label="Trade"></select>
+        <!-- ADDED: filter by who items are assigned to; options are filled in by applyWhoFilter() -->
+        <select id="whoF" aria-label="Assigned to" hidden></select>
+      </div>
+      <div class="tools">
+        <button type="button" class="btn" id="linkBtn">Send link</button>
+        <!-- REMOVED: the "Copy list for subs" button (id="copyBtn") was here -->
+        <!-- ADDED: makes a copy of this list (rooms, items, trades, notes) with nothing checked off -->
+        <button type="button" class="btn edit-only" id="dupJob">Duplicate list</button>
+        <!-- REMOVED: the "Archive list" button. Archiving now happens on a project's page. -->
+        <button type="button" class="btn edit-only" id="tradesBtn">Edit levels &amp; trades</button>
+        <span class="saved" id="saved">Loading…</span>
+      </div>
+      <!-- Fallback textarea shown when the clipboard can't be used automatically -->
+      <div class="copybox" id="copyBox" hidden><textarea id="copyText" readonly aria-label="Text to copy"></textarea></div>
+      <!-- Panel for adding/removing levels (floors) and trades -->
+      <div class="copybox edit-only" id="tradesBox" hidden><div class="eyebrow">Levels</div><div class="when" style="margin-top:4px">Removing a level moves its rooms to the first level.</div><div class="meta" id="floorList"></div><form id="addFloor" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0 14px"><input id="newFloor" type="text" maxlength="30" placeholder="Add a level (e.g. Basement)" aria-label="New level"><button class="btn primary" type="submit">Add</button></form><div class="eyebrow">Trades</div><div class="meta" id="tradeList"></div><form id="addTrade" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding-top:10px"><input id="newTrade" type="text" maxlength="30" placeholder="Add a trade (e.g. Insulation)" aria-label="New trade"><button class="btn primary" type="submit">Add</button></form></div>
+    </header>
+
+    <!-- Form to add a new room to this list and choose which level it belongs to -->
+    <!-- ADDED: shown to people who can only check items off (see applyPerms in allLists.js) -->
+    <!-- ADDED (data safety): shown on a list from before workspaces, which doesn't appear in My Lists yet -->
+    <div class="viewonly legacy" id="legacyBanner" hidden>This list is from before workspaces, so it doesn't show in My Lists yet.
+      <button type="button" class="btn primary" id="legacyClaim">Move into my workspace</button></div>
+    <p class="viewonly" id="viewOnly" hidden>You can check items off this list. Ask a workspace admin if you need access to add or change things.</p>
+    <form class="addroom edit-only" id="addRoom">
+      <input id="newRoom" type="text" maxlength="40" placeholder="Add New Room" aria-label="New room name">
+      <select id="newRoomFloor" aria-label="List"></select>
+      <button class="btn primary" type="submit">Add</button>
+    </form>
+
+    <!-- All the room cards get rendered into this element by render() -->
+    <main id="rooms"></main>
+
+    <!-- CHANGED (data safety): this archives the list instead of deleting it. Deleting for good happens only in Settings > Archive. -->
+    <div class="danger-zone edit-only" id="dangerZone">
+      <button type="button" class="link muted" id="askDelJob">Archive this list</button>
+    </div>
+    <div class="confirm boxed edit-only" id="confirmDelJob" hidden>
+      Archive this list for everyone? It moves to Settings, under Archive, where you can bring it back or delete it for good.
+      <div class="acts"><button type="button" class="btn" id="keepJob">Keep it</button><button type="button" class="btn danger" id="delJob">Archive</button></div>
+    </div>
+  </div>
+</div>
+  </div><!-- /.db-main -->
+</div><!-- /.db -->
+<!-- ADDED: signature box. Opens when someone checks an item off; the item is only marked done after they type their name and sign. -->
+<div class="sig-back" id="sigBack" hidden>
+  <div class="sig-box" role="dialog" aria-modal="true" aria-labelledby="sigTitle">
+    <h2 id="sigTitle">Sign to mark done</h2>
+    <p class="sig-item" id="sigItem"></p>
+    <label for="sigName">Your name</label>
+    <input id="sigName" type="text" maxlength="60" autocomplete="name" placeholder="First and last name">
+    <div class="sig-label"><span>Signature</span><button type="button" class="link" id="sigClear">Clear</button></div>
+    <canvas id="sigPad" aria-label="Sign here with your finger or mouse"></canvas>
+    <p class="sig-err" id="sigErr" hidden></p>
+    <div class="acts"><button type="button" class="btn" id="sigCancel">Cancel</button><button type="button" class="btn primary" id="sigOk">Sign &amp; mark done</button></div>
+  </div>
+</div>
+<!-- Small popup message, shown briefly by toast() -->
+<div class="toast" id="toast" hidden></div>
+<footer class="site-copy">©<i>HomeHub LLC</i>2026</footer>
+</body>
+</html>

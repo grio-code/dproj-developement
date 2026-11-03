@@ -1,0 +1,103 @@
+/* ©HomeHub LLC 2026 */
+/* ADDED: a project's clients (project-clients.html). Builds on new-project/new-project.css (layout, cards, fields);
+   colors, buttons and glass come from theme.css, loaded last. */
+
+.pc-eyebrow { margin-top: 14px; font: 500 12px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.pc h1 { margin-top: 2px; overflow-wrap: anywhere; }
+
+.pc-card-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 16px; }
+.pc-card-h h2 { margin: 0; }
+.pc-badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .22); color: rgba(255, 255, 255, .78);
+  font: 500 11px var(--f-mono); letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* Job details (read-only) */
+.pc-dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 18px; margin: 0; }
+.pc-dl div { min-width: 0; }
+.pc-dl dt { font: 500 12px var(--f-body); color: rgba(255, 255, 255, .6); margin-bottom: 3px; }
+.pc-dl dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+.pc-dl .pc-wide { grid-column: 1 / -1; }
+.pc-dl dd.is-empty { color: rgba(255, 255, 255, .4); }
+.pc-note { margin-top: 16px; }
+
+/* Client list */
+.pc-clients { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pc-clients:empty { display: none; }
+.pc-client {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 4px 14px; align-items: start;
+  padding: 14px; border-radius: 10px; background: rgba(0, 0, 0, .22); border: 1px solid rgba(255, 255, 255, .08);
+}
+.pc-client.is-new { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.pc-avatar {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: var(--accent-ink); font: 700 18px var(--f-display);
+}
+.pc-client-main { min-width: 0; }
+.pc-client-main b { display: block; font-size: 16px; overflow-wrap: anywhere; }
+.pc-client-main .pc-line { display: block; font-size: 14px; color: rgba(255, 255, 255, .7); overflow-wrap: anywhere; }
+.pc-tag { display: inline-block; margin: 0 0 0 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 600 11px var(--f-body); vertical-align: 2px; }
+.pc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding: 0; list-style: none; }
+.pc-chips li { padding: 3px 9px; border-radius: 6px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1); font-size: 12px; }
+.pc-chips li span { color: rgba(255, 255, 255, .6); }
+.pc-client-acts { display: flex; gap: 6px; }
+.pc-client-acts .btn { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.pc-empty { margin: 0; color: rgba(255, 255, 255, .7); }
+
+/* Client permissions: view-only switches */
+.pc-perm-lede { margin: -6px 0 12px; }
+.pc-perms { list-style: none; margin: 0; padding: 0; }
+.pc-perm { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, .1); }
+.pc-perms li:first-child .pc-perm { border-top: 0; }
+.pc-perm-text { min-width: 0; }
+.pc-perm-text b { display: block; font-weight: 600; }
+.pc-perm-text > span { display: block; font-size: 13px; color: rgba(255, 255, 255, .62); }
+.pc-perm .soon { margin-left: 8px; padding: 1px 7px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25); font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .7); vertical-align: 2px; }
+.pc-perm.is-off .pc-perm-text { opacity: .45; }
+.pc-perms li:nth-child(2) .pc-perm { border-top-color: rgba(255, 255, 255, .22); } /* under the main switch */
+.pc-perm--locked { border-top: 1px solid rgba(255, 255, 255, .18); margin-top: 4px; }
+.pc-lock { width: 46px; display: grid; place-items: center; color: var(--danger); }
+.pc-lock svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* Switch */
+.pc-switch { position: relative; flex: none; width: 46px; height: 28px; }
+.pc-switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+.pc-switch i { position: absolute; inset: 0; border-radius: 999px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .2); transition: background .2s; }
+.pc-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.pc-switch input:checked + i { background: var(--accent); border-color: transparent; }
+.pc-switch input:checked + i::after { transform: translateX(18px); background: var(--accent-ink); }
+.pc-switch input:focus-visible + i { outline: 3px solid #fff; outline-offset: 2px; }
+.pc-switch input:disabled { cursor: not-allowed; }
+.pc-switch input:disabled + i { opacity: .45; }
+
+.pc-dirty { align-self: center; font-size: 14px; color: var(--accent); }
+
+/* Pop-up: add / edit a client contact */
+.pc-back {
+  position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-start; justify-content: center;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.pc-dlg { width: 100%; max-width: 620px; margin: auto; padding: 22px; display: grid; gap: 14px; }
+.pc-dlg h2 { margin: 0; font: 700 30px/1 var(--f-display); }
+.pc-sub { margin: 22px 0 12px; font: 700 20px/1.1 var(--f-display); }
+.pc-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 0 12px; }
+.pc-dlg .f select { width: 100%; min-height: 46px; padding: 10px 12px; border-radius: 8px; font: inherit; font-size: 16px; color: #fff; }
+.pc-dlg .acts { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.pc-dlg .acts .btn { min-height: 46px; padding: 0 22px; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 120;
+  bottom: calc(110px + env(safe-area-inset-bottom, 0px)); padding: 10px 16px; border-radius: 8px; font-size: 14px;
+}
+
+@media (max-width: 620px) {
+  .pc-dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pc-client { grid-template-columns: 40px minmax(0, 1fr); }
+  .pc-avatar { width: 40px; height: 40px; }
+  .pc-client-acts { grid-column: 2; }
+  .pc-dlg { padding: 18px 16px; }
+  .pc-dlg .acts .btn { flex: 1; }
+  .pc-add { width: 100%; }
+}

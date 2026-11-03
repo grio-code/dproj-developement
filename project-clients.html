@@ -1,0 +1,207 @@
+<!-- ©HomeHub LLC 2026 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clients · HomeHub</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HomeHub">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0d1820">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="new-project/new-project.css?v=1" rel="stylesheet"> <!-- page layout, cards and fields shared with New project -->
+<link href="project-clients/project-clients.css?v=1" rel="stylesheet">
+<link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="firebase-starter/perms.js?v=1"></script>
+
+<script src="nav-bar/nav.js" defer></script>
+<script src="nav-bar/auth-ui.js" defer></script>
+<script src="project-clients/project-clients.js?v=1" defer></script>
+</head>
+<body>
+
+<!--  animated backdrop  -->
+<!-- <div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div> -->
+<div class="backdrop" aria-hidden="true"></i><i class="bd-grid"></i></div>
+
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">HomeHub</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<!-- ADDED: a project's clients. Opened from "Add client" on a project's page (index.html#projects/{id}).
+     Clients can only view project updates: job details are shown here read-only, and every client permission is view-only.
+     Nothing is saved until Save. Data: projects/{id}/clients/{clientId} and projects/{id}.clientAccess
+     (see project-clients/project-clients.js and the "clients" rules in firebase-starter/firebase.rules). -->
+<main class="wrap np pc">
+  <a class="np-back" id="pcBack" href="index.html#projects">‹ Back to project</a>
+  <div class="pc-eyebrow">Clients</div>
+  <h1 id="pcTitle">Loading…</h1>
+  <p class="np-lede">Add the people this home is for. Clients can only view project updates. They can’t change anything.</p>
+
+  <div class="np-msg" id="pcMsg" role="alert" hidden></div>
+
+  <!-- Job details: read-only. Clients never get edit rights; change these with Edit project. -->
+  <section class="np-card" aria-labelledby="pcJobH">
+    <div class="pc-card-h">
+      <h2 id="pcJobH">Job details</h2>
+      <span class="pc-badge">View only</span>
+    </div>
+    <dl class="pc-dl" id="pcJob"></dl>
+    <p class="f-hint pc-note" id="pcJobNote">Clients can see these details but can’t edit them.</p>
+  </section>
+
+  <!-- Clients -->
+  <section class="np-card" aria-labelledby="pcClientsH">
+    <div class="pc-card-h">
+      <h2 id="pcClientsH">Clients</h2>
+      <button type="button" class="btn btn--primary pc-add" id="pcAdd">Add client contact</button>
+    </div>
+    <ul class="pc-clients" id="pcClients"></ul>
+    <p class="pc-empty" id="pcEmpty">No clients yet. Use <b>Add client contact</b> to add the buyer, or anyone else who should follow this project.</p>
+  </section>
+
+  <!-- Client permissions: view-only switches. There is no switch that lets a client edit. -->
+  <section class="np-card" aria-labelledby="pcPermH">
+    <div class="pc-card-h">
+      <h2 id="pcPermH">Client permissions</h2>
+    </div>
+    <p class="f-hint pc-perm-lede">Choose what clients can see on this project. These apply to every client above.</p>
+    <ul class="pc-perms" id="pcPerms"></ul>
+    <div class="pc-perm pc-perm--locked">
+      <div class="pc-perm-text"><b>Edit job details, lists or anything else</b><span>Never. Clients can only view.</span></div>
+      <span class="pc-lock" aria-label="Not allowed">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      </span>
+    </div>
+  </section>
+
+  <div class="np-actions">
+    <button type="button" class="btn btn--primary" id="pcSave">Save</button>
+    <a class="btn" id="pcCancel" href="index.html#projects">Cancel</a>
+    <span class="pc-dirty" id="pcDirty" hidden>Unsaved changes</span>
+  </div>
+</main>
+
+<!-- Add / edit a client contact -->
+<div class="sig-back pc-back" id="pcDlgBack" hidden>
+  <form class="sig-box pc-dlg" id="pcForm" role="dialog" aria-modal="true" aria-labelledby="pcDlgH" novalidate>
+    <h2 id="pcDlgH">Add client contact</h2>
+    <div class="pc-dlg-body">
+      <div class="np-grid">
+        <div class="f">
+          <label for="cFirst">First name</label>
+          <input id="cFirst" maxlength="40" autocomplete="off">
+        </div>
+        <div class="f">
+          <label for="cLast">Last name</label>
+          <input id="cLast" maxlength="40" autocomplete="off">
+        </div>
+        <div class="f np-wide">
+          <label for="cDisplay">Display name</label>
+          <input id="cDisplay" maxlength="80" autocomplete="off" placeholder="Filled in from the first and last name">
+          <span class="f-hint">How the client’s name shows in HomeHub, like “Jordan and Casey Smith”.</span>
+          <span class="f-err" id="cDisplayErr"></span>
+        </div>
+        <div class="f np-wide">
+          <label for="cStreet">Street address</label>
+          <input id="cStreet" maxlength="120" autocomplete="off">
+        </div>
+        <div class="f">
+          <label for="cCity">City</label>
+          <input id="cCity" maxlength="60" autocomplete="off">
+        </div>
+        <div class="pc-pair">
+          <div class="f">
+            <label for="cState">State</label>
+            <select id="cState"></select>
+          </div>
+          <div class="f">
+            <label for="cZip">Zip code</label>
+            <input id="cZip" maxlength="10" inputmode="numeric" autocomplete="off">
+            <span class="f-err" id="cZipErr"></span>
+          </div>
+        </div>
+        <div class="f">
+          <label for="cPhone">Phone number</label>
+          <input id="cPhone" type="tel" maxlength="30" autocomplete="off">
+          <span class="f-err" id="cPhoneErr"></span>
+        </div>
+        <div class="f">
+          <label for="cEmail">Primary email</label>
+          <input id="cEmail" type="email" maxlength="120" autocomplete="off">
+          <span class="f-err" id="cEmailErr"></span>
+        </div>
+      </div>
+
+      <h3 class="pc-sub">Custom fields</h3>
+      <div class="np-grid">
+        <div class="f"><label for="cLender">Lender</label><input id="cLender" maxlength="80" autocomplete="off"></div>
+        <div class="f"><label for="cAttorney">Buyer attorney</label><input id="cAttorney" maxlength="80" autocomplete="off"></div>
+        <div class="f"><label for="cRealtor">Realtor</label><input id="cRealtor" maxlength="80" autocomplete="off"></div>
+        <div class="f"><label for="cBroker">Broker</label><input id="cBroker" maxlength="80" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="acts">
+      <button type="button" class="btn" id="pcDlgCancel">Cancel</button>
+      <button type="submit" class="btn btn--primary" id="pcDlgSave">Save</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="pcToast" hidden></div>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <a href="index.html" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <a href="index.html#projects" aria-label="My Projects">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
+      <span class="dock-tip">My Projects</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New Punch List</button>
+    <button role="menuitem" onclick="location.href='index.html#dailylogs'">New Daily Log <span class="soon">Soon</span></button>
+  </div>
+</nav>
+<footer class="site-copy">© <i>HomeHub LLC</i> 2026</footer>
+</body>
+</html>
