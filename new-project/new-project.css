@@ -13,7 +13,7 @@ button, input, textarea { font: inherit; color: inherit; }
   margin: 0 auto;
   padding-inline: 16px;
   padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 24px);
-  padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)); /* room for the dock */
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
 }
 .np h1 { margin: 6px 0 10px; }
 .np-back { color: #8db8de; font-size: 14px; text-decoration: none; }

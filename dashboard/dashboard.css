@@ -33,11 +33,11 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
   color-scheme: dark;
   color: var(--ink);
   font-family: var(--f-body);
-  grid-template-columns: 208px minmax(0, 1fr);
+  grid-template-columns: 248px minmax(0, 1fr);
   gap: 32px;
   max-width: 1240px;
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top, 0px) + 28px) clamp(16px, 4vw, 40px) calc(132px + env(safe-area-inset-bottom, 0px));
+  padding: calc(env(safe-area-inset-top, 0px) + 28px) clamp(16px, 4vw, 40px) calc(40px + env(safe-area-inset-bottom, 0px));
   align-items: start;
 }
 
@@ -87,24 +87,48 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
 .db-ws-logo:empty { visibility: hidden; }
 .db-ws-logo img { width: 100%; height: 100%; object-fit: contain; }
 .db-ws-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.db-jobs { display: grid; gap: 8px; padding: 14px 6px; border-bottom: 1px solid var(--rule); }
-.db-jobs label { color: var(--muted); font-size: 13px; font-weight: 600; }
-.db-select { position: relative; }
-.db-select::after {
-  content: ""; position: absolute; right: 14px; top: 50%; width: 8px; height: 8px; margin-top: -6px;
-  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); pointer-events: none;
+/* + (new project / list / daily log) and Jobs / Templates, right under the workspace name */
+.db-addrow { display: flex; align-items: center; gap: 8px; padding: 14px 6px 8px; }
+.db-add { position: relative; flex: none; }
+.db-add-btn {
+  display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--amber); color: var(--amber-ink); cursor: pointer; transition: transform .2s, filter .2s;
 }
-.db-select select {
-  width: 100%; min-height: 44px; padding: 0 38px 0 12px;
-  -webkit-appearance: none; appearance: none;
-  border-radius: 9px; border: 1px solid var(--edge);
-  background: rgba(255, 255, 255, .06); color: #fff;
-  font: 600 15px var(--f-body); text-overflow: ellipsis; cursor: pointer;
+.db-add-btn:hover { filter: brightness(1.08); }
+.db-add-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; transition: transform .2s; }
+.db-add-btn[aria-expanded="true"] svg { transform: rotate(45deg); }
+.db-add-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.db-add-menu {
+  display: none; position: absolute; z-index: 20; top: calc(100% + 8px); left: 0; min-width: 190px; padding: 6px;
+  border-radius: 12px; border: 1px solid var(--edge); background: rgba(30, 30, 30, .98); box-shadow: 0 16px 36px -10px rgba(0, 0, 0, .7);
 }
-.db-select select:hover { border-color: rgba(255, 255, 255, .3); }
-.db-select select:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; border-color: transparent; }
-.db-select option { background: #1c1c1c; color: #fff; }
-.db-newproj { width: 100%; min-height: 42px; }
+.db-add-menu.is-open { display: grid; gap: 2px; }
+.db-add-menu a { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; color: #fff; font: 500 14px var(--f-body); text-decoration: none; }
+.db-add-menu a:hover, .db-add-menu a:focus-visible { background: rgba(255, 255, 255, .1); outline: 0; }
+.db-add-menu a[hidden] { display: none; }
+.db-add-menu .soon { margin-left: auto; font-size: 11px; color: var(--faint); }
+.db-tabs.db-seg { flex: 1; min-width: 0; margin: 0; width: auto; }
+.db-tabs.db-seg button { flex: 1; min-width: 0; padding: 0 6px; min-height: 34px; font-size: 13px; }
+.db-tabs.db-seg button[aria-pressed="true"] { background: var(--glass-hi); color: #fff; box-shadow: inset 0 -2px 0 var(--amber); }
+.db-tabs.db-seg button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Open / Warranty / Closed in the sidebar */
+.db-tabs.db-side-stage { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 6px 10px; width: auto; }
+.db-tabs.db-side-stage button { min-height: 34px; padding: 0 4px; font-size: 12.5px; white-space: nowrap; }
+
+/* The projects: name, address and a progress bar each */
+.db-sp { list-style: none; margin: 0; padding: 0 0 6px; display: grid; gap: 2px; border-bottom: 1px solid var(--rule); }
+.db-sp a {
+  display: grid; gap: 3px; padding: 10px 12px; border-radius: 9px; color: var(--muted); text-decoration: none;
+  transition: background .2s, color .2s;
+}
+.db-sp a b { color: var(--ink); font: 600 14.5px var(--f-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-sp a .addr { font-size: 12px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-sp a .db-tape { margin-top: 3px; }
+.db-sp a:hover { background: rgba(255, 255, 255, .06); }
+.db-sp a[aria-current="page"] { background: var(--glass-hi); box-shadow: inset 3px 0 0 var(--amber); }
+.db-sp a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.db-sp .db-empty { padding: 10px 12px; font-size: 13px; color: var(--faint); }
 
 .db-nav {
   display: grid;
@@ -438,7 +462,7 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
 
 /* Small message that confirms an action */
 .db-toast {
-  position: fixed; z-index: 60; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  position: fixed; z-index: 60; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
   padding: 10px 16px; border-radius: 9px; background: var(--amber); color: var(--amber-ink);
   font: 500 14px var(--f-body); transition: opacity .25s, transform .25s;

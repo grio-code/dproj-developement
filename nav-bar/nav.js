@@ -3,9 +3,6 @@
   const fnav = document.getElementById('fnav');
   const links = document.getElementById('fnavLinks');
   const pill = links.querySelector('.fnav-pill');
-  const dock = document.getElementById('dock');
-  const fab = document.getElementById('dockFab');
-  const menu = document.getElementById('dockMenu');
   const current = () => links.querySelector('[aria-current="page"]');
 
   // Mark the link matching the current URL as active
@@ -16,7 +13,7 @@
   const norm = p => p.replace(/index\.html$/, '');
   function markCurrent() {
     const path = norm(location.pathname), hash = location.hash;
-    const all = Array.from(document.querySelectorAll('.fnav-links a, .dock-items a'));
+    const all = Array.from(document.querySelectorAll('.fnav-links a'));
     const samePage = all.filter(a => norm(a.pathname) === path);
     const hashHit = samePage.some(a => a.hash && hash.startsWith(a.hash));
     all.forEach(a => {
@@ -36,29 +33,14 @@
   links.querySelectorAll('a').forEach(a => a.addEventListener('mouseenter', () => movePill(a)));
   links.addEventListener('mouseleave', () => movePill(current()));
 
-  // Compact top bar on scroll; hide dock when scrolling down
-  let lastY = window.scrollY, ticking = false;
+  // Compact top bar on scroll
+  let ticking = false;
   function onScroll() {
-    const y = window.scrollY;
-    fnav.classList.toggle('is-compact', y > 40);
-    if (Math.abs(y - lastY) > 6) {
-      dock.classList.toggle('is-hidden', y > lastY && y > 120 && !menu.classList.contains('is-open'));
-      lastY = y;
-    }
+    fnav.classList.toggle('is-compact', window.scrollY > 40);
     ticking = false;
   }
   window.addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(onScroll); ticking = true; } }, { passive: true });
   fnav.addEventListener('transitionend', e => { if (e.propertyName === 'width') movePill(current()); });
-
-  // Create menu
-  function toggleMenu(open) {
-    const isOpen = open ?? !menu.classList.contains('is-open');
-    menu.classList.toggle('is-open', isOpen);
-    fab.setAttribute('aria-expanded', String(isOpen));
-  }
-  fab.addEventListener('click', e => { e.stopPropagation(); toggleMenu(); });
-  document.addEventListener('click', e => { if (!menu.contains(e.target)) toggleMenu(false); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(false); });
 
   window.addEventListener('resize', () => movePill(current()));
   document.fonts?.ready.then(() => movePill(current()));

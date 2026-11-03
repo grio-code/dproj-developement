@@ -5,10 +5,11 @@
 // Projects hold punch lists. A project is made on new-project.html; its punch lists are jobs with projectId set,
 // and a project's progress is all of its punch lists added together.
 //
-// Left column:  the Project picker, "New project", and the section menu.
+// Left column:  the + (new project / list / daily log), Jobs / Templates, the Open / Warranty / Closed toggle and the projects
+//               themselves (each project's features live on its own page), then Settings.
 // Dashboard:    greeting with today's weather, a one-line summary, workspace facts, Needs your attention (coming soon),
-//               Recent activity, Up next (every open punch item) and Your projects (progress across each project's lists).
-// Projects:     a card per project (index.html#projects, the dock's "My Projects"), punch lists not in a project yet,
+//               Recent activity and This week's agenda (coming soon).
+// Projects:     a card per project (index.html#projects), punch lists not in a project yet,
 //               and one project's page with its details, timeline, punch lists and daily logs.
 //
 // Firestore data:
@@ -25,8 +26,6 @@
 // Writes: "Move to project" for a punch list that isn't in a project yet (jobs/{id}.projectId), a project's stage (editors),
 // "Archive project" (editors) and "Delete project" (admins only).
 // Editing a project happens on new-project.html?edit={id}.
-// The sidebar's Project picker focuses the dashboard on one project (st.focus): the facts, summary, Up next, Recent activity and
-// Your projects panels then show only that project. "All projects" clears it. The choice is kept for the browser session.
 // Weather comes from Open-Meteo (free, no key), using the browser's location.
 (() => {
   'use strict';
@@ -47,7 +46,7 @@
   const st = {
     user: null, profile: {}, wid: '', ws: {}, members: [], projects: [], jobs: [], loose: [], folders: {},
     canEdit: false, isAdmin: false, perm: {}, mine: false, focus: '', loaded: false, allTasks: false, projectsFailed: false,
-    stage: 'open' // ADDED: which stage My projects shows (Open, Warranty or Close)
+    stage: 'open' // which stage the sidebar (and My projects) shows: Open, Warranty or Closed
   };
 
   // ---------- PROJECT STAGES (ADDED) ----------
@@ -171,7 +170,7 @@
       .map(j => Object.assign(j, { _items: null, _last: Math.max(toMs(j.updatedAt), toMs(j.createdAt)) }))
       .sort((a, b) => b._last - a._last);
     link_();
-    try { const f = sessionStorage.getItem('hh-focus'); if (f && st.projects.some(p => p.id === f)) st.focus = f; } catch (e) {}
+    try { sessionStorage.removeItem('hh-focus'); } catch (e) {} // the sidebar project picker is gone; the dashboard always shows every project
 
     renderHello();
     renderBrand();
@@ -285,30 +284,53 @@
   function renderAll() {
     const a = analyze();
     // One section failing (say, a panel missing from index.html) must not stop the others, Projects included
-    [renderPicker, renderBrief, renderFacts, renderTasks, renderFeed, renderProgress, renderProjects].forEach(fn => {
+    [renderSide, renderBrief, renderFacts, renderFeed, renderProjects].forEach(fn => {
       try { fn(a); } catch (ex) { console.error(fn.name + ' failed:', ex); }
     });
     route();
   }
 
-  // Project picker: projects only (their punch lists are on each project's page)
-  function renderPicker(a) {
-    const sel = $('dbJob');
-    const keep = st.focus;
-    sel.textContent = '';
-    sel.appendChild(new Option(a.projects.length ? 'All projects (' + a.projects.length + ')' : 'No projects yet', ''));
-    a.projects.forEach(x => sel.appendChild(new Option(projName(x.p) + (x.open ? '  (' + x.open + ' open)' : ''), x.p.id)));
-    sel.value = keep;
-    if (sel.value !== keep) sel.value = '';
-    $('dbNewProj').hidden = !st.perm.createProjects;
+  // Sidebar: the projects in the stage picked with Open / Warranty / Closed. Each links to that project's page.
+  function renderSide(a) {
+    $('dbAddProject').hidden = !st.perm.createProjects;
+    renderStageBar(a.projects);
+    const ul = $('dbSideProjects');
+    ul.textContent = '';
+    const list = a.projects.filter(x => stageOf(x.p) === st.stage);
+    if (!list.length) {
+      ul.appendChild(el('li', 'db-empty', st.projectsFailed ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.'
+        : !a.projects.length ? (st.perm.createProjects ? 'No projects yet. Use + to create one.' : 'No projects yet.')
+        : 'No ' + stageName(st.stage).toLowerCase() + ' projects.'));
+      return;
+    }
+    list.forEach(x => {
+      const li = el('li');
+      const aEl = link(projUrl(x.p.id));
+      aEl.dataset.pid = x.p.id;
+      aEl.append(el('b', null, projName(x.p)), el('span', 'addr', x.p.address || [x.p.lot && 'Lot ' + x.p.lot, x.p.community].filter(Boolean).join(', ') || 'No address yet'),
+        tape(x.pct, x.total > 0 && x.open === 0, projName(x.p) + ' progress'));
+      li.appendChild(aEl);
+      ul.appendChild(li);
+    });
+    markSide();
   }
-  // Picking a project focuses the dashboard on it; "All projects" shows everything again
-  $('dbJob').addEventListener('change', e => {
-    st.focus = e.target.value;
-    try { st.focus ? sessionStorage.setItem('hh-focus', st.focus) : sessionStorage.removeItem('hh-focus'); } catch (ex) {}
-    renderAll();
-    if (location.hash !== '#dashboard') location.hash = '#dashboard';
-  });
+  // Highlight the project whose page is open
+  function markSide() {
+    const [view, sub] = decodeURIComponent(location.hash.slice(1)).split('/');
+    document.querySelectorAll('#dbSideProjects a').forEach(a => view === 'projects' && sub === a.dataset.pid ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  }
+
+  // The + menu under the workspace name: new project, new list, new daily log (moved here from the bottom dock)
+  const addBtn = $('dbAdd'), addMenu = $('dbAddMenu');
+  function toggleAdd(open) {
+    const on = open ?? !addMenu.classList.contains('is-open');
+    addMenu.classList.toggle('is-open', on);
+    addBtn.setAttribute('aria-expanded', String(on));
+  }
+  addBtn.addEventListener('click', e => { e.stopPropagation(); toggleAdd(); });
+  document.addEventListener('click', e => { if (!addMenu.contains(e.target)) toggleAdd(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleAdd(false); });
+  addMenu.addEventListener('click', () => toggleAdd(false));
 
   // One sentence: how much is open, and which project is closest to done. Parts that point somewhere are links.
   function renderBrief(a) {
@@ -331,7 +353,7 @@
       add('Your workspace is ready. ');
       add(st.perm.createProjects ? 'Create your first project.' : 'Projects will show up here once someone creates one.', st.perm.createProjects ? 'new-project.html' : null);
     } else {
-      if (a.openTotal) { add(plural(a.openTotal, 'item'), '#next'); add(a.openTotal === 1 ? ' is still open' : ' are still open'); }
+      if (a.openTotal) { add(plural(a.openTotal, 'item')); add(a.openTotal === 1 ? ' is still open' : ' are still open'); }
       else add('Every punch item is signed off');
       const close = a.projects.filter(x => x.open > 0 && x.open <= NEARLY_DONE).sort((x, y) => x.open - y.open)[0];
       if (close) { add(', and '); add(projShort(close.p), projUrl(close.p.id)); add(' is ' + plural(close.open, 'item') + ' from done.'); }
@@ -355,50 +377,8 @@
     return [t.roomName, listShort(t.job), p && projShort(p), t.trade].filter(Boolean).join(' · ');
   }
 
-  // Up next: open punch items, each linking to its punch list
-  function renderTasks(a) {
-    const ul = $('dbTasks');
-    const more = $('dbMoreTasks');
-    ul.textContent = '';
-    $('nextCount').textContent = a.tasks.length ? plural(a.tasks.length, 'open task') : '';
-    more.hidden = true;
-    const mine = $('dbMine'); // ADDED
-    mine.setAttribute('aria-pressed', String(st.mine));
-    mine.textContent = 'Assigned to me' + (st.loaded ? ' (' + a.mineCount + ')' : '');
-    if (!st.loaded) { ul.appendChild(el('li', 'db-empty', 'Loading open tasks…')); return; }
-    if (!a.tasks.length && st.mine) { ul.appendChild(el('li', 'db-empty', 'Nothing open is assigned to you.')); return; } // ADDED
-    if (!a.tasks.length) {
-      ul.appendChild(el('li', 'db-empty', a.jobs.length ? 'No open tasks. Every punch item is signed off.' : (a.focus ? 'Open punch items show up here once this project has punch lists.' : 'Open punch items show up here once your projects have punch lists.')));
-      return;
-    }
-    const shown = st.allTasks ? a.tasks : a.tasks.slice(0, TASKS_SHOWN);
-    shown.forEach(t => {
-      const li = el('li');
-      // CHANGED: the box is a real checkbox now. Ticking it opens the sign-off box (see SIGN OFF FROM UP NEXT below);
-      // the rest of the row still opens the punch list.
-      const box = el('button', 'box');
-      box.type = 'button';
-      box.setAttribute('aria-label', 'Sign off: ' + t.text);
-      box.addEventListener('click', () => openSign(t));
-      const aEl = link(listUrl(t.job.id));
-      aEl.append(el('b', null, t.text), el('span', 'where', whereOf(t)));
-      if (t.createdAt) { const age = el('span', 'age', ago(t.createdAt)); age.title = 'Added ' + new Date(t.createdAt).toLocaleString(); aEl.appendChild(age); }
-      if (t.assignedTo) { // ADDED: who it's assigned to
-        const me = t.assignedTo === st.user.uid;
-        aEl.appendChild(el('span', 'who' + (me ? ' is-me' : ''), me ? 'Assigned to you' : 'Assigned to ' + (memberName(t.assignedTo) !== 'Someone' ? memberName(t.assignedTo) : t.assignedName || 'someone')));
-      }
-      li.append(box, aEl);
-      ul.appendChild(li);
-    });
-    if (a.tasks.length > TASKS_SHOWN) {
-      more.hidden = false;
-      more.textContent = st.allTasks ? 'Show fewer' : 'Show all ' + a.tasks.length + ' open tasks';
-    }
-  }
-  $('dbMoreTasks').addEventListener('click', () => { st.allTasks = !st.allTasks; renderTasks(analyze()); });
-  $('dbMine').addEventListener('click', () => { st.mine = !st.mine; renderTasks(analyze()); }); // ADDED
-
-  // ---------- SIGN OFF FROM UP NEXT (ADDED) ----------
+  // ---------- SIGN OFF (kept for later) ----------
+  // Up next is gone from the dashboard, so nothing opens this box right now. It is kept so it can be reused on a project's page.
   // Same rule as on the punch list page: an item is only marked done once someone types their name and signs.
   // Saves the same fields the punch list page saves (done, doneAt, signedBy, signature), so the Firestore rules accept it
   // from anyone in the workspace, and updates the list's open count.
@@ -549,26 +529,6 @@
     : !c.total ? plural(c.lists, 'punch list') + ', no items yet'
     : (c.open ? plural(c.open, 'open item') + ' of ' + c.total : 'All ' + c.total + ' items signed off') + ' across ' + plural(c.lists, 'punch list');
 
-  // Your projects (dashboard): each project's progress across all of its punch lists
-  function renderProgress(a) {
-    const ul = $('dbProgress');
-    if (!ul) return; // this page has no "Your projects" panel
-    ul.textContent = '';
-    if (!a.shown.length) {
-      ul.appendChild(el('li', 'db-empty', st.projectsFailed ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.' : 'Your projects appear here with how close each one is to done.'));
-      return;
-    }
-    a.shown.slice(0, 6).forEach(x => {
-      const li = el('li');
-      const aEl = link(projUrl(x.p.id));
-      aEl.append(el('b', null, projName(x.p)), el('span', 'num', x.total ? x.pct + '%' : '—'),
-        tape(x.pct, x.total > 0 && x.open === 0, projName(x.p) + ' progress'),
-        el('small', null, progressText(x) + (x.p._last ? '. Last activity ' + ago(x.p._last) + '.' : '.')));
-      li.appendChild(aEl);
-      ul.appendChild(li);
-    });
-  }
-
   // ---------- Projects (My Projects) ----------
   function renderProjects(a) {
     $('newProject').hidden = !st.perm.createProjects;
@@ -579,7 +539,6 @@
     // CHANGED: only the projects in the stage picked at the top (Open, Warranty or Close) are shown
     const found = a.projects.filter(x => match(projName(x.p), x.p.address, x.p.community, x.p.lot, ...(x.p._lists || []).map(listTitle)));
     const shown = found.filter(x => stageOf(x.p) === st.stage);
-    renderStageBar(found);
     if (st.projectsFailed) grid.appendChild(el('p', 'db-empty', 'Projects couldn’t load: permission denied. Republish the Firestore rules (they now include projects), then refresh.'));
     else if (!shown.length) grid.appendChild(el('p', 'db-empty',
       !a.projects.length ? (st.perm.createProjects ? 'No projects yet. Use New project to create your first one.' : 'No projects yet.')
@@ -627,7 +586,7 @@
   }
   $('projSearch').addEventListener('input', () => renderProjects(analyze()));
 
-  // ADDED: the Open / Warranty / Close buttons at the top of My projects, each with how many projects it holds
+  // The Open / Warranty / Closed buttons in the sidebar, each with how many projects it holds
   function renderStageBar(found) {
     document.querySelectorAll('#projStage [data-stage]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.stage === st.stage)));
     const n = k => found.filter(x => stageOf(x.p) === k).length;
@@ -640,7 +599,7 @@
     if (!b) return;
     st.stage = b.dataset.stage;
     try { sessionStorage.setItem('hh-proj-stage', st.stage); } catch (ex) {}
-    renderProjects(analyze());
+    renderAll();
   });
 
   // ADDED: move a project to another stage (editors). Opening the project's stage keeps My projects on that stage
@@ -1105,9 +1064,7 @@
     if (!VIEWS.includes(view)) { sub = ''; view = 'dashboard'; } // #next, #activity... are spots on the dashboard
     VIEWS.forEach(v => { const panel = document.getElementById('v-' + v); if (panel) { panel.hidden = v !== view; panel.style.display = v === view ? 'block' : 'none'; } });
     root.querySelectorAll('.db-nav a').forEach(a => a.dataset.view === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
-    const sel = $('dbJob');
-    sel.value = st.focus;
-    if (sel.value !== st.focus) sel.value = '';
+    markSide();
     if (view === 'projects') {
       $('projList').hidden = !!sub;
       $('projDetail').hidden = !sub;

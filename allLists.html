@@ -50,15 +50,6 @@
 
 
 <!-- Navigation -->
-<!-- Goo filter for the dock (include once) -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="fn-goo">
-    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
-    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
-    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
-  </filter>
-</svg>
-
 <!-- Top bar -->
 <header class="fnav" id="fnav">
   <a class="fnav-brand" href="index.html">
@@ -81,51 +72,6 @@
   </div>
 </header>
 
-<!-- Bottom dock -->
-<nav class="dock" id="dock" aria-label="Quick navigation">
-  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
-  <div class="dock-items">
-    <!-- Home -->
-    <a href="index.html" aria-label="Home"> <!-- CHANGED: no longer marked as the current page (this is My Lists, not Home) -->
-      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
-      <span class="dock-tip">Home</span>
-    </a>
-    <!-- Calendar -->
-    <!-- <a href="calendar.html" aria-label="Calendar">
-      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
-      <span class="dock-tip">Calendar</span>
-    </a> -->
-
-    <!-- Lists -->
-    <a href="index.html#projects" aria-label="My Projects">
-      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
-      <span class="dock-tip">My Projects</span>
-    </a>
-
-    <!-- Daily Logs -->
-    <!-- <a href="dailyLogs.html" aria-label="Daily Logs">
-      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
-      <span class="dock-tip">Daily Logs</span>
-    </a> -->
-
-    <!-- Messages -->
-    <!-- <a href="messages.html" aria-label="Messages">
-      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
-      <span class="dock-tip">Messages</span>
-    </a> -->
-
-    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
-      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
-    </button>
-  </div>
-  <div class="dock-menu" id="dockMenu" role="menu">
-    <!-- <button role="menuitem">New Event</button> -->
-    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
-    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
-    <button role="menuitem" onclick="location.href='index.html#dailylogs'">New Daily Log <span class="soon">Soon</span></button>
-    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
-  </div>
-</nav>
 <!-- ADDED: the dashboard's left sidebar, so My Lists sits in the same layout as Dashboard and My projects.
      Shown to signed-in people only; guests opening a shared link get the top bar instead. allLists.js fills in the workspace and project picker. -->
 <div class="db" id="db">

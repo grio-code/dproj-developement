@@ -71,7 +71,7 @@ body {
   max-width: 720px; 
   margin: 0 auto; 
   padding-inline: 16px; 
-  padding-block: 0 calc(130px + env(safe-area-inset-bottom, 0px)); /* CHANGED: was 56px. Leaves room under the last thing on the page (like "Delete this list") so the floating bottom dock never covers it */
+  padding-block: 0 calc(56px + env(safe-area-inset-bottom, 0px)); 
 } /* centered column, phone-width on desktop too */
 button, select, input, textarea { 
   font: inherit; 

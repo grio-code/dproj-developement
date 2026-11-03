@@ -50,16 +50,16 @@
   color-scheme: dark;
 }
  
-.fnav, .dock {
+.fnav {
   --fn-ease: cubic-bezier(.22, 1, .36, 1);
   font-family: var(--f-body);
   box-sizing: border-box;
 }
-.fnav *, .dock * { 
+.fnav * { 
   box-sizing: border-box; 
   -webkit-tap-highlight-color: transparent; 
 }
-.fnav :focus-visible, .dock :focus-visible { 
+.fnav :focus-visible { 
   outline: 2px solid var(--focus); 
   outline-offset: 2px; 
 }
@@ -185,180 +185,6 @@
   opacity: .88; 
 }
  
-/* ---------- Bottom dock ---------- */
-/* The dock bar is the "ink" color and the + button is amber, the same two-tone as the primary button and the open-items pill.
-   Icons use --bg so they stay readable in both light and dark mode. */
-.dock {
-  position: fixed; z-index: 50; left: 50%;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  transition: transform .5s var(--fn-ease), opacity .4s;
-}
-.dock.is-hidden { 
-  transform: translate(-50%, 140%); 
-  opacity: 0; 
-}
-.dock-shape { 
-  position: absolute; 
-  inset: -10px; 
-  filter: url(#fn-goo) drop-shadow(0 8px 14px rgba(0,0,0,.25)); 
-  pointer-events: none; 
-}
-.dock-shape span { 
-  position: absolute; 
-}
-.dock-bar { 
-  left: 10px; 
-  top: 10px; 
-  bottom: 10px; 
-  right: 76px; 
-  border-radius: 999px; 
-  background: var(--ink); 
-}
-.dock-blob {
-  right: 10px; 
-  top: 50%; 
-  width: 64px; 
-  height: 64px; 
-  margin-top: -32px;
-  border-radius: 50%; 
-  background: var(--accent);
-  transition: transform .5s var(--fn-ease);
-}
-.dock:hover .dock-blob { 
-  transform: translateX(4px);
-}
-.dock-items { 
-  position: relative; 
-  display: flex; 
-  align-items: center; 
-  gap: 4px; 
-  padding: 8px 10px; 
-}
-.dock-items a {
-  position: relative; 
-  width: 52px; 
-  height: 48px; 
-  display: grid; 
-  place-items: center;
-  color: var(--bg); 
-  opacity: .6; 
-  border-radius: 10px; 
-  text-decoration: none;
-  transition: opacity .25s, background .25s;
-}
-.dock-items a:hover { 
-  opacity: 1; 
-  background: color-mix(in srgb, var(--bg) 14%, transparent); 
-}
-.dock-items a[aria-current="page"] { 
-  opacity: 1; 
-  background: color-mix(in srgb, var(--bg) 14%, transparent); 
-}
-.dock-items a::after {
-  content: ""; 
-  position: absolute; 
-  bottom: 4px; 
-  left: 50%; 
-  width: 5px; 
-  height: 5px; 
-  margin-left: -2.5px;
-  border-radius: 50%; 
-  background: var(--accent);
-  transform: scale(0); 
-  transition: transform .35s var(--fn-ease);
-}
-.dock-items a[aria-current="page"]::after { 
-  transform: scale(1); 
-}
-.dock-tip {
-  position: absolute; 
-  bottom: calc(100% + 10px); 
-  left: 50%; 
-  transform: translate(-50%, 4px);
-  padding: 4px 9px; 
-  border-radius: 4px;
-  background: var(--ink); 
-  color: var(--bg);
-  font-family: var(--f-mono); 
-  font-size: 11px; 
-  letter-spacing: .05em; 
-  text-transform: uppercase;
-  white-space: nowrap; 
-  opacity: 0; 
-  pointer-events: none;
-  transition: opacity .2s, transform .2s;
-}
-.dock-items a:hover .dock-tip, .dock-items a:focus-visible .dock-tip { 
-  opacity: 1; 
-  transform: translate(-50%, 0); 
-}
-.dock-fab {
-  width: 64px; 
-  height: 64px; 
-  margin-left: 14px; 
-  margin-right: -8px;
-  border: 0; 
-  border-radius: 50%; 
-  background: transparent;
-  color: var(--accent-ink); 
-  cursor: pointer; 
-  display: grid; 
-  place-items: center;
-}
-.dock-fab svg { 
-  transition: transform .45s var(--fn-ease); 
-}
-.dock-fab[aria-expanded="true"] svg { 
-  transform: rotate(135deg); 
-}
-/* The create menu looks like a punch list room card */
-.dock-menu {
-  position: absolute; 
-  right: 0;
-  bottom: calc(100% + 14px); 
-  min-width: 200px;
-  display: grid; 
-  gap: 2px; 
-  padding: 6px; 
-  border-radius: 8px;
-  background: var(--sheet); 
-  border: 1px solid var(--rule);
-  box-shadow: 0 16px 40px -12px rgba(0,0,0,.45);
-  transform-origin: bottom right; 
-  transform: scale(.9) translateY(8px);
-  opacity: 0; 
-  pointer-events: none;
-  transition: transform .35s var(--fn-ease), opacity .2s;
-}
-.dock-menu.is-open { 
-  transform: none; 
-  opacity: 1; 
-  pointer-events: auto; 
-}
-.dock-menu button {
-  display: flex; 
-  align-items: center; 
-  gap: 10px; 
-  min-height: 40px; 
-  padding: 9px 12px;
-  border: 0; 
-  border-radius: 6px; 
-  background: transparent; 
-  color: var(--ink);
-  font: 500 14px var(--f-body); 
-  text-align: left; 
-  cursor: pointer;
-}
-.dock-menu button:hover { 
-  background: var(--chip); 
-  color: var(--chip-ink); 
-}
-/* Was nested inside .dock-menu before; flattened so it works in every browser */
-.dock-menu a { 
-  text-decoration: none; 
-  color: inherit; 
-}
 .fn-icon { 
   width: 22px; 
   height: 22px; 
@@ -370,10 +196,8 @@
 }
  
 /* ---------- Signed-in state ---------- */
-/* The dock stays hidden, and the Login/Sign up area stays invisible, until Firebase says who's here.
+/* The Login/Sign up area stays invisible until Firebase says who's here.
    This avoids a flash of the wrong state on page load. */
-.dock { display: none; }
-html.signed-in .dock { display: block; }
 
 .fnav-actions { visibility: hidden; }
 html.auth-ready .fnav-actions { visibility: visible; }
@@ -434,16 +258,8 @@ html.signed-in .fnav-hello { display: flex; }
   .fnav-hello-text { display: none; }   /* phones: just the photo in the middle */
   .fnav-hello { padding: 2px; }
 }
-@media (max-width: 420px) {
-  .dock-items a { 
-    width: 44px; 
-  }
-  .dock-bar { 
-    right: 70px; 
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .fnav, .fnav *, .dock, .dock * { 
+  .fnav, .fnav * { 
     transition-duration: .01ms !important; 
   }
 }
@@ -489,40 +305,12 @@ html.signed-in .fnav-hello { display: flex; }
 /* Keep Login / Sign up in the right-hand column even when the middle (page links) is empty */
 .fnav-actions { grid-column: 3; }
 
-/* ---------- Bottom dock ----------
-   The "goo" filter (#fn-goo, in each page's HTML) melts the bar and the amber + button together.
-   The filter needs solid shapes: it can't blur what's behind the bar (no frosted glass), and it erases
-   see-through fills. So the bar is a solid dark color that matches the glass top bar on the dark backdrop. */
-.dock {
-  --bg: #fff;                           /* icon color */
-  --ink: #fff;
-  --sheet: rgba(30, 30, 30, .72);       /* create menu: heavier glass */
-  --rule: rgba(255, 255, 255, .16);
-  --chip: rgba(141, 184, 222, .16);
-  --chip-ink: #8db8de;
-  --focus: #fff;
-  color-scheme: dark;
-}
-.dock-shape { filter: url(#fn-goo) drop-shadow(0 10px 18px rgba(0, 0, 0, .5)); }
-.dock-bar { right: 76px; background: #232626; }
-@media (max-width: 420px) { .dock-bar { right: 70px; } }
-.dock:hover .dock-blob { transform: translateX(6px); }  /* stretches the gooey neck between bar and + */
 
-/* Hover labels and the create menu: dark glass with white text */
-.dock-tip { background: rgba(30, 30, 30, .72); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); color: #fff; border: 1px solid rgba(255, 255, 255, .14); }
-.dock-menu {
-  border-color: rgba(255, 255, 255, .14);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-}
-
-/* Copyright line at the bottom of every page (extra bottom space keeps it clear of the dock) */
+/* Copyright line at the bottom of every page */
 .site-copy {
-  padding: 28px 16px 110px;
+  padding: 28px 16px 28px;
   text-align: center;
   font-size: 13px;
   opacity: .7;
 }
 
-/* "Soon" tag next to a menu item that isn't built yet */
-.dock-menu .soon { margin-left: 8px; font-size: 11px; font-weight: 500; opacity: .6; }
