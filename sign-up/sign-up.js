@@ -1,14 +1,5 @@
 // ©HomeHub LLC 2026
-// Create-a-workspace wizard (modeled on Slack's flow):
-//   1 Email  ->  2 Verify (emailed link)  ->  3 Name the workspace  ->  4 Profile  ->  5 Invite teammates
-// People who arrive from an invite (signup.html?w=WORKSPACE_ID) skip steps 3 and 5 and join that workspace instead.
-//
-// Data written to Firestore:
-//   workspaces/{wid}                    name, ownerId, createdAt
-//   workspaces/{wid}/members/{uid}      role (owner|member), displayName, username, email, photo, joinedAt
-//   workspaces/{wid}/invites/{email}    one doc per invited email (removed when that person joins)
-//   workspaces/{wid}/usernames/{name}   claims a username so two people can't share one
-//   users/{uid}/profile/info            name, username, logo (profile photo), workspaceId
+
 (() => {
   'use strict';
   if (!window.firebase) return;
@@ -34,15 +25,32 @@
  
   // ---------- Tiny helpers ----------
   const store = {
-    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
-    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+    get(k) { 
+      try { 
+        return localStorage.getItem(k); 
+      } catch (e) { 
+        return null; 
+      } 
+    },
+    set(k, v) {
+       try { 
+        localStorage.setItem(k, v); 
+      } catch (e) {} 
+    },
+    del(k) { 
+      try { 
+        localStorage.removeItem(k); 
+      } catch (e) {} 
+    }
   };
   function setErr(id, text) {
     const el = $(id);
     el.textContent = text || '';
     const input = el.parentElement.querySelector('input, textarea');
-    if (input && input.type !== 'file') { if (text) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
+    if (input && input.type !== 'file') { 
+      if (text) input.setAttribute('aria-invalid', 'true'); 
+      else input.removeAttribute('aria-invalid'); 
+    }
   }
   function showMsg(text, isError = true) {
     const m = $('msg');
@@ -55,7 +63,12 @@
     const old = btn.textContent;
     btn.disabled = true;
     btn.textContent = label;
-    try { return await fn(); } finally { btn.disabled = false; btn.textContent = old; }
+    try { 
+      return await fn(); 
+    } finally { 
+      btn.disabled = false; 
+      btn.textContent = old; 
+    }
   }
   function friendly(code, fallback) {
     return ({
@@ -79,19 +92,42 @@
   const qs = new URLSearchParams(location.search);
   if (qs.get('w')) store.set('pendingWid', qs.get('w'));            // remember which workspace the invite is for
   const invitedWid = qs.get('w') || store.get('pendingWid') || '';
-  const ctx = { user: null, profile: {}, wid: '', workspaceName: '', isOwner: false, invited: !!invitedWid, claimed: '' };
+  const ctx = { 
+    user: null, 
+    profile: {}, 
+    wid: '', 
+    workspaceName: '', 
+    isOwner: false, 
+    invited: !!invitedWid, 
+    claimed: '' 
+  };
   let seq = 0; // guards against an older sign-in check finishing after a newer one
  
   // ---------- Steps ----------
   const TITLES = {
-    email: 'Create your workspace', verify: 'Check your email', confirmEmail: 'Confirm your email',
-    workspace: 'Name your workspace', profile: 'Set up your profile', invite: 'Invite your team', done: 'You\u2019re all set'
+    email: 'Create your workspace', 
+    verify: 'Check your email', 
+    confirmEmail: 'Confirm your email',
+    workspace: 'Name your workspace',
+    profile: 'Set up your profile', 
+    invite: 'Invite your team', 
+    done: 'You\u2019re all set'
   };
   const ORDER = ['email', 'verify', 'workspace', 'profile', 'invite'];
-  const PROGRESS = { email: 'email', verify: 'verify', confirmEmail: 'verify', workspace: 'workspace', profile: 'profile', invite: 'invite', done: null };
+  const PROGRESS = { 
+    email: 'email', 
+    verify: 'verify', 
+    confirmEmail: 'verify', 
+    workspace: 'workspace', 
+    profile: 'profile', 
+    invite: 'invite', 
+    done: null 
+  };
  
   function showStep(name) {
-    document.querySelectorAll('.step').forEach(s => { s.hidden = s.dataset.step !== name; });
+    document.querySelectorAll('.step').forEach(s => { 
+      s.hidden = s.dataset.step !== name; 
+    });
     $('stepTitle').textContent = TITLES[name] || TITLES.email;
     const cur = PROGRESS[name];
     const idx = cur ? ORDER.indexOf(cur) : ORDER.length;       // "done" marks every step finished
@@ -151,14 +187,21 @@
   }
   $('resendBtn').addEventListener('click', async () => {
     const email = store.get('emailForSignIn');
-    if (!email) { showStep('email'); return; }
+    if (!email) { 
+      showStep('email'); 
+      return; 
+    }
     try {
       await sendLink(email);
       showMsg('Email sent again.', false);
       startCooldown();
-    } catch (ex) { showMsg(friendly(ex.code, 'Could not send the email. Try again.')); }
+    } catch (ex) { 
+      showMsg(friendly(ex.code, 'Could not send the email. Try again.')); 
+    }
   });
-  $('changeEmailBtn').addEventListener('click', () => { showMsg(''); showStep('email'); });
+  $('changeEmailBtn').addEventListener('click', () => { 
+    showMsg(''); showStep('email'); 
+  });
  
   // The emailed link opened on a different browser or device: we don't know the email, so ask for it
   $('confirmForm').addEventListener('submit', async e => {
@@ -189,8 +232,13 @@
  
   // ================= Where does this person go next? =================
   async function readWorkspace(wid) {
-    try { const s = await db.doc('workspaces/' + wid).get(); return s.exists ? s.data() : null; }
-    catch (e) { return null; }
+    try { 
+      const s = await db.doc('workspaces/' + wid).get(); 
+      return s.exists ? s.data() : null; 
+    }
+    catch (e) { 
+      return null; 
+    }
   }
   async function resume(user) {
     const my = ++seq;
@@ -201,7 +249,10 @@
     ctx.wid = ctx.profile.workspaceId || '';
     ctx.claimed = ctx.profile.username || '';
  
-    if (ctx.wid && ctx.profile.username) { location.replace(APP_URL); return; } // already fully set up
+    if (ctx.wid && ctx.profile.username) { 
+      location.replace(APP_URL); 
+      return; 
+    } // already fully set up
  
     if (ctx.wid) {                                  // has a workspace but hasn't finished their profile
       const ws = await readWorkspace(ctx.wid);
@@ -250,7 +301,11 @@
         const uid = ctx.user.uid;
         const ref = ctx.wid ? db.doc('workspaces/' + ctx.wid) : db.collection('workspaces').doc();
         if (ctx.wid) await ref.update({ name });
-        else await ref.set({ name, ownerId: uid, createdAt: TS() });
+        else await ref.set({ 
+          name, 
+          ownerId: uid, 
+          createdAt: TS() 
+        });
         await db.doc('users/' + uid + '/profile/info').set({ workspaceId: ref.id }, { merge: true });
         ctx.wid = ref.id; ctx.workspaceName = name; ctx.isOwner = true; ctx.invited = false;
       });
@@ -283,8 +338,14 @@
   }
   function acceptPhoto(file) {
     if (!file) return clearPhoto();
-    if (!PHOTO_TYPES.includes(file.type)) { clearPhoto(); return setErr('pPhotoErr', 'Use a PNG, JPG or WebP image.'); }
-    if (file.size > MAX_PHOTO_BYTES) { clearPhoto(); return setErr('pPhotoErr', 'That image is over 2 MB. Choose a smaller one.'); }
+    if (!PHOTO_TYPES.includes(file.type)) { 
+      clearPhoto(); 
+      return setErr('pPhotoErr', 'Use a PNG, JPG or WebP image.'); 
+    }
+    if (file.size > MAX_PHOTO_BYTES) { 
+      clearPhoto(); 
+      return setErr('pPhotoErr', 'That image is over 2 MB. Choose a smaller one.'); 
+    }
     setErr('pPhotoErr', '');
     if (photo.url) URL.revokeObjectURL(photo.url);
     photo.file = file;
@@ -298,10 +359,20 @@
     $('photoRemove').hidden = false;
   }
   $('pPhoto').addEventListener('change', () => acceptPhoto($('pPhoto').files[0]));
-  $('photoRemove').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); clearPhoto(); });
+  $('photoRemove').addEventListener('click', e => { 
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    clearPhoto(); 
+  });
   const drop = $('photoDrop');
-  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('is-over'); }));
-  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('is-over'); }));
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { 
+    e.preventDefault(); 
+    drop.classList.add('is-over'); 
+  }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { 
+    e.preventDefault(); 
+    drop.classList.remove('is-over'); 
+  }));
   drop.addEventListener('drop', e => {
     const file = e.dataTransfer.files[0];
     if (!file) return;
@@ -327,9 +398,18 @@
     const uname = $('pUser').value.trim().toLowerCase();
     const pw = $('pPassword').value;
     let ok = true;
-    if (!name) { setErr('pNameErr', 'Enter your display name.'); ok = false; } else setErr('pNameErr', '');
-    if (!USER_RE.test(uname)) { setErr('pUserErr', 'Use 3 to 30 lowercase letters, numbers, periods, dashes or underscores.'); ok = false; } else setErr('pUserErr', '');
-    if (pw.length < MIN_PASSWORD) { setErr('pPasswordErr', 'Use at least ' + MIN_PASSWORD + ' characters.'); ok = false; } else setErr('pPasswordErr', '');
+    if (!name) { 
+      setErr('pNameErr', 'Enter your display name.'); 
+      ok = false; 
+    } else setErr('pNameErr', '');
+    if (!USER_RE.test(uname)) { 
+      setErr('pUserErr', 'Use 3 to 30 lowercase letters, numbers, periods, dashes or underscores.'); 
+      ok = false; 
+    } else setErr('pUserErr', '');
+    if (pw.length < MIN_PASSWORD) { 
+      setErr('pPasswordErr', 'Use at least ' + MIN_PASSWORD + ' characters.'); 
+      ok = false; 
+    } else setErr('pPasswordErr', '');
     if (!ok || $('pPhotoErr').textContent) return;
  
     try {
@@ -343,8 +423,13 @@
         // Claim the username (unique within this workspace)
         const claimRef = db.doc('workspaces/' + wid + '/usernames/' + uname);
         const claim = await claimRef.get();
-        if (claim.exists && claim.data().uid !== user.uid) { const err = new Error('taken'); err.code = 'username-taken'; throw err; }
-        if (!claim.exists) await claimRef.set({ uid: user.uid, createdAt: TS() });
+        if (claim.exists && claim.data().uid !== user.uid) { 
+          const err = new Error('taken'); 
+          err.code = 'username-taken'; throw err; 
+        }
+        if (!claim.exists) await claimRef.set({ 
+          uid: user.uid, createdAt: TS() 
+        });
         if (ctx.claimed && ctx.claimed !== uname) await db.doc('workspaces/' + wid + '/usernames/' + ctx.claimed).delete().catch(() => {});
         ctx.claimed = uname;
  
@@ -412,7 +497,6 @@
     ].join('\n');
   }
   // Gmail / Outlook compose links, plus mailto: for computers with an email app set up
-  // (without one, a mailto: link just opens a blank page)
   function inviteLinks(emails) {
     const one = emails.length === 1;
     const to = one ? emails[0] : '', bcc = one ? '' : emails.join(',');
@@ -439,11 +523,17 @@
     $('doneSend').hidden = !sent.length;
     if (sent.length) {
       const l = inviteLinks(sent);
-      $('doneGmail').href = l.gmail; $('doneOutlook').href = l.outlook; $('doneMail').href = l.mail;
+      $('doneGmail').href = l.gmail; 
+      $('doneOutlook').href = l.outlook; 
+      $('doneMail').href = l.mail;
       $('doneCopy').onclick = async () => {
         const text = inviteText(sent.length === 1 ? sent[0] : '');
-        try { await navigator.clipboard.writeText(text); showMsg('Invitation copied. Paste it into an email or text.', false); }
-        catch (e) { window.prompt('Copy this:', text); }
+        try { await navigator.clipboard.writeText(text); 
+          showMsg('Invitation copied. Paste it into an email or text.', false);
+        }
+        catch (e) { 
+          window.prompt('Copy this:', text); 
+        }
       };
     }
     $('linkRow').hidden = !ctx.isOwner;
@@ -452,10 +542,19 @@
   }
   $('copyLink').addEventListener('click', async () => {
     const input = $('shareLink');
-    try { await navigator.clipboard.writeText(input.value); showMsg('Link copied.', false); }
-    catch (e) { input.focus(); input.select(); showMsg('Select the link and copy it.', false); }
+    try { 
+      await navigator.clipboard.writeText(input.value); 
+      showMsg('Link copied.', false); 
+    }
+    catch (e) { 
+      input.focus(); 
+      input.select(); 
+      showMsg('Select the link and copy it.', false); 
+    }
   });
-  $('goApp').addEventListener('click', () => { location.href = APP_URL; });
+  $('goApp').addEventListener('click', () => { 
+    location.href = APP_URL; 
+  });
  
   // ================= Waiting tab: continue when the emailed link is confirmed in another tab =================
   // Firebase usually syncs the sign-in between tabs by itself, but not always. This is the backup:
@@ -465,9 +564,13 @@
     if (ctx.user) return;                                   // already signed in here
     if (Number(store.get('signupVerifiedAt') || 0) > loadedAt) location.reload();
   }
-  window.addEventListener('storage', e => { if (e.key === 'signupVerifiedAt') checkVerified(); });
+  window.addEventListener('storage', e => { 
+    if (e.key === 'signupVerifiedAt') checkVerified(); 
+  });
   window.addEventListener('focus', checkVerified);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVerified(); });
+  document.addEventListener('visibilitychange', () => { 
+    if (!document.hidden) checkVerified(); 
+  });
   setInterval(checkVerified, 3000);
  
   // ================= Start =================
@@ -478,6 +581,7 @@
   });
   if (isLink) {
     const email = store.get('emailForSignIn');
-    if (email) completeLink(email); else showStep('confirmEmail');
+    if (email) completeLink(email); 
+    else showStep('confirmEmail');
   }
 })();
