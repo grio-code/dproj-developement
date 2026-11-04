@@ -592,7 +592,7 @@ body {
   color: var(--chip-ink); 
   font-size: 15px; 
   cursor: pointer; 
-} /* "‹ All lists" button */
+} /* "‹ All punch lists" button */
 .banner { 
   margin-top: 14px; 
   background: var(--chip); 
@@ -605,7 +605,7 @@ ul.jobs {
   margin-top: 14px; 
   display: grid; 
   gap: 10px; 
-} /* list of lists on the home screen */
+} /* list of punch lists on the home screen */
 ul.jobs a { 
   display: flex; 
   align-items: center; 
@@ -946,6 +946,24 @@ ul.jobs a { padding: 16px 18px; }
   border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); font-size: 15px;
 }
 .filters select[hidden] { display: none; }
+
+/* ---------- ADDED: due dates ---------- */
+/* The chip on an item. Overdue and due-soon also say so in words, so color is never the only clue. */
+.due {
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--chip-ink) 18%, transparent); color: var(--ink);
+}
+.due.is-soon { background: color-mix(in srgb, #f0b232 30%, transparent); }
+.due.is-over { background: color-mix(in srgb, var(--danger) 30%, transparent); }
+.due.is-done { background: transparent; box-shadow: inset 0 0 0 1px var(--rule); color: var(--muted); font-weight: 500; }
+/* The picker that opens under an item: a date box with Save / Clear / Cancel */
+.due-pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.due-pick input[type="date"] {
+  flex: 1 1 150px; min-width: 0; padding: 8px 10px;
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 15px;
+  color-scheme: dark;
+}
 
 /* ADDED (data safety): banner on a list from before workspaces */
 .viewonly.legacy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--ink); }

@@ -141,7 +141,7 @@ service cloud.firestore {
     }
 
     // ---------- projects ----------
-    // A project (made on newProject.html) holds its details and timeline. Its lists are jobs with projectId set.
+    // A project (made on newProject.html) holds its details and timeline. Its punch lists are jobs with projectId set.
     // Everyone in the workspace can see projects. CHANGED: creating needs the "Create projects" permission; changing,
     // archiving (including its stage) and deleting need "Edit, archive and delete projects". Admins can do all of it.
     match /projects/{projectId} {
@@ -218,23 +218,31 @@ service cloud.firestore {
         allow read: if true;
         allow delete: if canEditWs(jobWs(jobId)) || projArchivedJob(jobId);
         // CHANGED: "Assign tasks" may also set who an item is assigned to (assignedTo, assignedName, assignedAt, assignedBy)
+        // ADDED: "Assign tasks" may also set an item's due date (dueDate, a day like 2026-11-12, or empty to clear it)
         allow create: if (!newlyDone() || hasSig(request.resource.data))
+                      && validDue(request.resource.data)
                       && (canEditWs(jobWs(jobId))
                           || (request.resource.data.keys().hasOnly(['done', 'doneAt', 'signedBy', 'signature', 'note', 'trade', 'updatedAt',
-                                                                    'assignedTo', 'assignedName', 'assignedAt', 'assignedBy'])
+                                                                    'assignedTo', 'assignedName', 'assignedAt', 'assignedBy', 'dueDate'])
                               && request.resource.data.get('note', '') == ''
                               && request.resource.data.get('trade', '') == ''
-                              && (request.resource.data.get('assignedTo', '') == '' || can(jobWs(jobId), 'assignTasks'))));
+                              && (request.resource.data.get('assignedTo', '') == '' || can(jobWs(jobId), 'assignTasks'))
+                              && (request.resource.data.get('dueDate', '') == '' || can(jobWs(jobId), 'assignTasks'))));
         allow update: if (!newlyDone() || hasSig(request.resource.data))
+                      && validDue(request.resource.data)
                       && (canEditWs(jobWs(jobId))
                           || onlyChanges(['done', 'doneAt', 'signedBy', 'signature', 'updatedAt'])
                           || (can(jobWs(jobId), 'assignTasks')
-                              && onlyChanges(['assignedTo', 'assignedName', 'assignedAt', 'assignedBy', 'updatedAt'])));
+                              && onlyChanges(['assignedTo', 'assignedName', 'assignedAt', 'assignedBy', 'dueDate', 'updatedAt'])));
       }
       // ADDED: true when this write switches the item from not done to done
       function newlyDone() {
         return request.resource.data.get('done', false) == true
           && (resource == null || resource.data.get('done', false) != true);
+      }
+      // ADDED: a due date is either missing, empty, or a day written like 2026-11-12
+      function validDue(d) {
+        return !('dueDate' in d) || (d.dueDate is string && d.dueDate.matches('([0-9]{4}-[0-9]{2}-[0-9]{2})?'));
       }
       // ADDED: a name (1-60 characters) and a PNG signature image under about 100 KB
       function hasSig(d) {

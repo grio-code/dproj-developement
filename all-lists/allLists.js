@@ -182,7 +182,8 @@ const ui = {
   confirmJob: null, // ADDED: list waiting for "Delete this list?" confirmation on All Lists
   // REMOVED: archiveFolder (archiving moved from folders and lists to projects)
   who: "",     // ADDED: assignee filter: "" = anyone, "me", "none", or a member's uid
-  assign: null // ADDED: item whose "Assign to" picker is open
+  assign: null, // ADDED: item whose "Assign to" picker is open
+  due: null // ADDED: item whose "Due date" picker is open
 };
 let jobsList = {};     // all jobs, for the home screen
 // ADDED: all folders, as { folderId: { name, createdAt } }. Folders are stored inside the same "settings/app" record as trades and levels
@@ -475,7 +476,8 @@ function saveItem(id) {
   };
   // FIXED: the assignment is only written back when the item already has one. Adding empty assignment fields to an item
   // that never had them counted as a change, so the Firestore rules refused check-offs from people without list access.
-  ["assignedTo", "assignedName", "assignedAt", "assignedBy"].forEach(k => { if (k in r) data[k] = r[k] || ""; });
+  // ADDED: dueDate rides along the same way. It is written back only if the item already has one, so a check-off or an edit never wipes it.
+  ["assignedTo", "assignedName", "assignedAt", "assignedBy", "dueDate"].forEach(k => { if (k in r) data[k] = r[k] || ""; });
   put("items", id, data);
 }
 // ADDED: assign an item to someone in the workspace ("" = unassigned)
@@ -502,6 +504,36 @@ function assignItem(id, who) {
       toast(e && e.code === "permission-denied"
         ? "Couldn't assign: permission denied. Make sure the latest Firestore rules are published."
         : "Couldn't assign. Check your connection.");
+    });
+}
+// ADDED: due dates. An item's due date is "YYYY-MM-DD" (a plain calendar day, so time zones can't shift it), or "" for none.
+// Setting one needs "Assign tasks" (or full list access); the Firestore rules check the same thing.
+const canDue = () => canEdit || !!perm.assignTasks;
+// Set or clear an item's due date. Like assignItem, this saves only its own field (merged into the item's record) and puts
+// things back with a message if the save is refused.
+function setDue(id, date) {
+  if (!canDue()) { toast("You don't have access to set due dates. Ask an admin."); return; }
+  date = (date || "").trim();
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast("Pick a valid date."); return; }
+  if (date === (rec(id).dueDate || "")) { ui.due = null; render(); return; } // nothing changed
+  const before = state.items[id];
+  const upd = { dueDate: date };
+  state.items[id] = Object.assign({}, rec(id), upd);
+  ui.due = null;
+  render();
+  const okMsg = date ? "Due " + fmtDue(date) : "Due date cleared";
+  if (!fs) { saveLocalJob(); flag("Saved on this phone"); toast(okMsg); return; }
+  flag(navigator.onLine === false ? "Offline. Will sync when back online." : "Saving…");
+  fs.doc("jobs/" + jobId + "/items/" + id).set(Object.assign({}, upd, { updatedAt: new Date().toISOString() }), { merge: true })
+    .then(() => { flag("Saved"); toast(okMsg); })
+    .catch(e => {
+      console.error("Couldn't set the due date:", e);
+      if (before) state.items[id] = before; else delete state.items[id];
+      render();
+      flag("Couldn't save.");
+      toast(e && e.code === "permission-denied"
+        ? "Couldn't set the due date: permission denied. Make sure the latest Firestore rules are published."
+        : "Couldn't set the due date. Check your connection.");
     });
 }
 let metaQ, sumQ; // timers used to debounce saves
@@ -603,6 +635,25 @@ const fmtDay = d => {
 { 
   return d; 
 } };
+// ADDED: due dates. Today as "YYYY-MM-DD" in this phone's own time zone, and a short label like "Nov 12" (the year only if it isn't this year).
+const dayStr = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const fmtDue = d => {
+  const [y, m, dd] = d.split("-").map(Number);
+  try {
+    return new Date(y, m - 1, dd).toLocaleDateString(undefined, y === new Date().getFullYear() ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+  } catch (e) { return d; }
+};
+// What to show for an item's due date: { cls, text }, or null when it has none. Open items past their date say "Overdue" (words as well as color).
+// A finished item just shows its date, with no warning color.
+function dueInfo(due, done) {
+  if (!due || !/^\d{4}-\d{2}-\d{2}$/.test(due)) return null;
+  const now = new Date(), today = dayStr(now), tomorrow = dayStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  if (done) return { cls: "is-done", text: "Due " + fmtDue(due) };
+  if (due < today) return { cls: "is-over", text: "Overdue · " + fmtDue(due) };
+  if (due === today) return { cls: "is-soon", text: "Due today" };
+  if (due === tomorrow) return { cls: "is-soon", text: "Due tomorrow" };
+  return { cls: "", text: "Due " + fmtDue(due) };
+}
 // Build <option> tags for the trade dropdowns, with the selected one marked. If an item uses a trade that was later deleted, it's still included so it doesn't vanish.
 const tradeOpts = sel => (sel && !TRADES.includes(sel) ? TRADES.concat(sel) : TRADES).map(t => `<option${
 t === sel ? " selected" : ""
@@ -638,6 +689,7 @@ function render() {
     // Build the list items for this room
     const lis = vis.map(it => {
       const r = rec(it.id), ed = ui.edit === it.id; // ed = is this item currently being edited?
+      const di = dueInfo(r.dueDate, r.done); // ADDED: due date chip (or null)
       // CHANGED: the green "✓ Done" badge below now uses fmtDateTime() so it shows the time of day, not just the date
       return `<li class="item ${r.done ? "done" : ""}" data-id="${it.id}">
         <input type="checkbox" id="cb-${it.id}" ${r.done ? "checked" : ""} aria-label="${esc(it.text)}">
@@ -655,6 +707,8 @@ function render() {
           }
             ${r.assignedTo ? `<span class="assignee${r.assignedTo === uid ? " is-me" : ""}">${r.assignedTo === uid ? "Assigned to you" : "Assigned to " + esc(memberLabel(r.assignedTo) || r.assignedName || "someone")}</span>` : ""}
             ${ed || !perm.assignTasks || !members.length || ui.assign === it.id ? "" : `<button type="button" class="link" data-assign="${it.id}">${r.assignedTo ? "Reassign" : "Assign"}</button>`}
+            ${di ? `<span class="due ${di.cls}">${esc(di.text)}</span>` : ""}
+            ${ed || r.done || !canDue() || ui.due === it.id ? "" : `<button type="button" class="link" data-due="${it.id}">${r.dueDate ? "Change due date" : "Set due date"}</button>`}
             ${ed || !canEdit ? "" : `<button type="button" class="link" data-edit="${
               it.id}">Edit</button>`
             }
@@ -666,6 +720,7 @@ function render() {
         ${ui.assign === it.id && perm.assignTasks ? `<div class="assign-pick"><select id="assign-${it.id}" data-assignsel="${it.id}" aria-label="Assign ${esc(it.text)} to">
             <option value="">Unassigned</option>${members.map(m => `<option value="${esc(m.id)}"${m.id === (r.assignedTo || "") ? " selected" : ""}>${esc((m.displayName || m.email || "Someone") + (m.id === uid ? " (you)" : ""))}</option>`).join("")}
           </select><button type="button" class="btn" data-assigncancel>Cancel</button></div>` : ""}
+        ${ui.due === it.id && canDue() ? `<div class="due-pick"><input type="date" id="due-${it.id}" value="${esc(r.dueDate || "")}" aria-label="Due date for ${esc(it.text)}"><button type="button" class="btn primary" data-duesave="${it.id}">Save</button>${r.dueDate ? `<button type="button" class="btn" data-dueclear="${it.id}">Clear</button>` : ""}<button type="button" class="btn" data-duecancel>Cancel</button></div>` : ""}
         ${ed && canEdit ? `<div class="edit"><input type="text" id="text-${
           it.id
         }" maxlength="160" value="${
@@ -882,7 +937,7 @@ function stopListening() {
   }); 
   unsubs = []; 
 }
-// Show the home screen with the list of all lists
+// Show the home screen with the list of all punch lists
 function showJobs() {
   stopListening(); jobId = null;
   document.getElementById("jobView").hidden = true;
@@ -1752,7 +1807,7 @@ async function duplicateJob() {
 }
 document.getElementById("dupJob")?.addEventListener("click", duplicateJob);
 // REMOVED: archiving lists and folders. Archiving now happens on a project's page (index.html#projects/{id}), which archives
-// the project together with its lists. Lists and folders archived earlier still show in Settings > Archive.
+// the project together with its punch lists. Lists and folders archived earlier still show in Settings > Archive.
 // Checking/unchecking an item.
 // CHANGED: checking an item no longer marks it done straight away. The box is unticked again and the signature box opens;
 // the item is only marked done once the person types their name and signs (see SIGNATURE TO MARK DONE below).
@@ -1847,9 +1902,17 @@ document.addEventListener("click", e => {
   // ADDED: open or close the "Assign to" picker (people with "Assign tasks")
   else if (d.assign) {
     if (!perm.assignTasks) { toast("You don't have access to assign tasks. Ask an admin."); return; }
-    ui.assign = d.assign; render(); document.getElementById("assign-" + d.assign)?.focus();
+    ui.assign = d.assign; ui.due = null; render(); document.getElementById("assign-" + d.assign)?.focus();
   }
   else if (b.hasAttribute("data-assigncancel")) { ui.assign = null; render(); }
+  // ADDED: due dates (people with "Assign tasks", or full list access): open the date picker, save, clear, or cancel
+  else if (d.due) {
+    if (!canDue()) { toast("You don't have access to set due dates. Ask an admin."); return; }
+    ui.due = d.due; ui.assign = null; render(); document.getElementById("due-" + d.due)?.focus();
+  }
+  else if (d.duesave) { const el = document.getElementById("due-" + d.duesave); setDue(d.duesave, el ? el.value : ""); }
+  else if (d.dueclear) setDue(d.dueclear, "");
+  else if (b.hasAttribute("data-duecancel")) { ui.due = null; render(); }
   // ADDED: every other button in a room edits the list, so editors only
   else if (!b.hasAttribute("data-cancel") && !needEdit()) return;
   // Start editing an item
@@ -1953,7 +2016,7 @@ async function watchPerms() {
       perm = nextPerm;
       canEdit = !!perm.manageLists;
       applyPerms();
-      if (changed) { ui.edit = null; ui.editRoom = null; ui.confirm = null; ui.assign = null; render(); renderJobs(); renderSide(); }
+      if (changed) { ui.edit = null; ui.editRoom = null; ui.confirm = null; ui.assign = null; ui.due = null; render(); renderJobs(); renderSide(); }
       resolve();
     }, () => resolve());
   });
@@ -1988,26 +2051,25 @@ function boot() {
     const projectId = new URLSearchParams(location.search).get("project") || ""; // ADDED: "New punch list" on a project page
     history.replaceState(null, "", location.pathname); // clear ?new=1 so a refresh doesn't make another list
     if (projectId) createJob("", projectId);           // from a project page: the list goes straight into that project
-    else { route(); openNewListDialog(); }             // CHANGED: from the left menu's + button: ask which project and folder first
+    else { route(); openNewListDialog(); }             // from the left menu's + button: ask which project and folder first
   } else {
     route();
   }
 }
-// ADDED: wait until Firebase knows who is signed in (or that nobody is), then start the app
+//  wait until Firebase knows who is signed in (or that nobody is), then start the app
 if (authSvc) {
   const stopAuthWait = authSvc.onAuthStateChanged(async user => {
     stopAuthWait();
     uid = user ? user.uid : null;
     if (uid) {
-      // CHANGED: find out which workspace this person belongs to (saved on their profile during sign-up)
+      // find out which workspace this person belongs to (saved on their profile during sign-up)
       try {
         const snap = await fs.doc("users/" + uid + "/profile/info").get();
         wid = (snap.exists && snap.data().workspaceId) || null;
-        myName = (snap.exists && snap.data().name) || ""; // ADDED: pre-fills the name in the signature box
+        myName = (snap.exists && snap.data().name) || ""; //  pre-fills the name in the signature box
       } catch (e) { wid = null; }
       if (wid) {
-        await watchPerms(); watchMembers(); // ADDED (CHANGED: and the workspace's people, for assigning)
-        // ADDED (data safety): bring back this person's lists from before workspaces (firebase-starter/legacy-data.js)
+        await watchPerms(); watchMembers(); 
         if (window.HH_LEGACY) window.HH_LEGACY.adopt(fs, uid, wid, canEdit).then(n => {
           if (n) toast((n === 1 ? "1 older list was" : n + " older lists were") + " brought back into your workspace.");
         });

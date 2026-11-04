@@ -486,6 +486,15 @@ a.btn {
 .st-menu { 
   position: relative; 
 }
+/* The glass cards each blur what is behind them (theme.css), which makes every card its own layer.
+   Without this, the menu can only rise above things inside its own card, so the next card (Archive) paints over it.
+   While a menu is open, lift the card that holds it above its neighbors. */
+.st-card { 
+  position: relative; 
+}
+.st-card:has(.st-menu-list:not([hidden])) { 
+  z-index: 20; 
+}
 .st-menu-list {
   position: absolute; 
   right: 0; 
