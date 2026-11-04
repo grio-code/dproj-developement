@@ -2,10 +2,26 @@
 /* ADDED: a project's clients (project-clients.html). Builds on new-project/new-project.css (layout, cards, fields);
    colors, buttons and glass come from theme.css, loaded last. */
 
-.pc-eyebrow { margin-top: 14px; font: 500 12px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
-.pc h1 { margin-top: 2px; overflow-wrap: anywhere; }
+.pc-eyebrow { 
+  margin-top: 14px; 
+  font: 500 12px var(--f-mono); 
+  letter-spacing: .12em; 
+  text-transform: uppercase; 
+  color: var(--accent); 
+}
+.pc h1 { 
+  margin-top: 2px; 
+  overflow-wrap: anywhere; 
+}
 
-.pc-card-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 16px; }
+.pc-card-h { 
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 10px 16px; 
+  margin-bottom: 16px; }
+  
 .pc-card-h h2 { margin: 0; }
 .pc-badge {
   display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
