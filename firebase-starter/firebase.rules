@@ -141,7 +141,7 @@ service cloud.firestore {
     }
 
     // ---------- projects ----------
-    // A project (made on newProject.html) holds its details and timeline. Its punch lists are jobs with projectId set.
+    // A project (made on newProject.html) holds its details and timeline. Its lists are jobs with projectId set.
     // Everyone in the workspace can see projects. CHANGED: creating needs the "Create projects" permission; changing,
     // archiving (including its stage) and deleting need "Edit, archive and delete projects". Admins can do all of it.
     match /projects/{projectId} {

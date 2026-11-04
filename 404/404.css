@@ -1,64 +1,162 @@
-      body { 
-        background: #ECEFF1; color: rgba(0,0,0,0.87); 
-        font-family: Roboto, Helvetica, Arial, sans-serif; 
-        margin: 0; 
-        padding: 0; 
-    }
-      #message { 
-        background: white; 
-        max-width: 360px; 
-        margin: 100px auto 16px; 
-        padding: 32px 24px 16px; 
-        border-radius: 3px; 
-    }
-      #message h3 { 
-        color: #888; 
-        font-weight: normal; 
-        font-size: 16px; 
-        margin: 16px 0 12px; 
-    }
-      #message h2 { 
-        color: #ffa100; 
-        font-weight: bold; 
-        font-size: 16px; 
-        margin: 0 0 8px; 
-    }
-      #message h1 { 
-        font-size: 22px; 
-        font-weight: 300; 
-        color: rgba(0,0,0,0.6); 
-        margin: 0 0 16px;
-    }
-      #message p { 
-        line-height: 140%; 
-        margin: 16px 0 24px; 
-        font-size: 14px; 
-    }
-      #message a { 
-        display: block; 
-        text-align: center; 
-        background: #039be5; 
-        text-transform: uppercase; 
-        text-decoration: none; 
-        color: white; 
-        padding: 16px; 
-        border-radius: 4px; 
-    }
-      #message, #message a { 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); 
-    }
-      #load { 
-        color: rgba(0,0,0,0.4); 
-        text-align: center; 
-        font-size: 13px; 
-    }
-      @media (max-width: 600px) {
-        body, #message {
-             margin-top: 0; 
-             background: white; 
-             box-shadow: none; 
-            }
-        body { 
-            border-top: 16px solid #ffa100; 
-        }
-      }
+/* ©HomeHub LLC 2026 */
+/* 404 page: the home page hero look (drifting glows come from theme.css), a short message, and a few floating tools. */
+
+/* The top bar has no sign-in check on this page, so show its button right away (nav.css hides it until Firebase answers) */
+.page-404 .fnav-actions { visibility: visible; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Layout ---------- */
+.nf {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding: calc(var(--nav-h, 80px) + 40px) clamp(20px, 6vw, 88px) 96px;
+}
+.nf-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 700px;
+}
+
+/* ---------- Words ---------- */
+.nf-eyebrow { margin: 0 0 18px; }
+.nf-code {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .07);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 -2px 0 #f0b232;
+  color: #fff;
+  font: 500 12px var(--f-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.nf h1 {
+  margin: 0 0 20px;
+  font: 700 clamp(48px, 8.5vw, 104px)/.92 var(--f-display);
+  letter-spacing: -.01em;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .25);
+}
+.nf-lead {
+  margin: 0 0 24px;
+  max-width: 34em;
+  font: 400 clamp(17px, 2vw, 20px)/1.5 var(--f-body);
+  color: rgba(255, 255, 255, .85);
+}
+
+/* The address that wasn't found, in a frosted chip */
+.nf-path {
+  margin: 0 0 32px;
+  max-width: 100%;
+}
+.nf-path[hidden] { display: none; }
+.nf-path code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 8px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font: 500 13px var(--f-mono);
+}
+
+/* ---------- Buttons (same as the home page) ---------- */
+.nf-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  font: 600 16px var(--f-body);
+  text-decoration: none;
+  transition: transform .2s, background .2s, border-color .2s;
+}
+.cta:hover { transform: translateY(-2px); }
+.cta:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.cta--main { background: #f0b232; color: #231800; }
+.cta--main:hover { background: #ffc54d; }
+.cta--alt { color: #fff; border-color: rgba(255, 255, 255, .55); }
+.cta--alt:hover { border-color: #fff; background: rgba(255, 255, 255, .08); }
+
+/* ---------- Floating tools (same drawing style as the home page) ---------- */
+.nf-tools {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.tool {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--s) * 1px);
+  aspect-ratio: 1;
+  margin: calc(var(--s) * -.5px) 0 0 calc(var(--s) * -.5px);
+}
+.tool-in {
+  width: 100%;
+  height: 100%;
+  animation: nf-drop .9s cubic-bezier(.2, 1.4, .4, 1) var(--in) backwards;
+}
+.tool svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: #464646;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 16px 14px rgba(0, 0, 0, .35));
+  transform: rotate(var(--r));
+  animation: nf-bob var(--d) ease-in-out var(--delay) infinite alternate;
+}
+@keyframes nf-drop {
+  from { opacity: 0; transform: translateY(-60px) scale(.5) rotate(-20deg); }
+}
+@keyframes nf-bob {
+  from { transform: translateY(0) rotate(var(--r)); }
+  to   { transform: translateY(-18px) rotate(calc(var(--r) + 7deg)); }
+}
+
+/* ---------- Phones and small tablets: tools sit lower and smaller, behind the words ---------- */
+@media (max-width: 760px) {
+  .nf {
+    align-items: flex-start;
+    padding-top: calc(var(--nav-h, 80px) + 28px);
+    padding-bottom: 56px;
+  }
+  .tool {
+    left: calc((var(--x) - 48) * 2%);
+    top: calc(56% + var(--y) * .4%);
+    width: calc(var(--s) * .6px);
+    margin: calc(var(--s) * -.3px) 0 0 calc(var(--s) * -.3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tool-in, .tool svg { animation: none; }
+  .cta { transition: none; }
+}

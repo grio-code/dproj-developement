@@ -592,7 +592,7 @@ body {
   color: var(--chip-ink); 
   font-size: 15px; 
   cursor: pointer; 
-} /* "‹ All punch lists" button */
+} /* "‹ All lists" button */
 .banner { 
   margin-top: 14px; 
   background: var(--chip); 
@@ -605,7 +605,7 @@ ul.jobs {
   margin-top: 14px; 
   display: grid; 
   gap: 10px; 
-} /* list of punch lists on the home screen */
+} /* list of lists on the home screen */
 ul.jobs a { 
   display: flex; 
   align-items: center; 

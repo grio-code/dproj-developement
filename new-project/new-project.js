@@ -2,7 +2,7 @@
 // New project page (new-project.html). Opened from "New Project" in the bottom dock's + menu.
 // With ?edit={projectId} the same page edits an existing project instead (opened from "Edit project" on the project's page).
 //
-// Saves a project. Its punch lists are made afterwards from the project's page, and point back to it with projectId:
+// Saves a project. Its lists are made afterwards from the project's page, and point back to it with projectId:
 //   projects/{id}  ownerId, workspaceId, name, community, lot, address, description, date (project date),
 //                  startDate, endDate, phases: [{ name, start, end }], createdAt, updatedAt
 //   jobs/{listId}  ... projectId: {id}

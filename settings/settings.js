@@ -544,8 +544,8 @@
   // Archiving a folder stamps everything inside it (sub-folders and lists) with archivedWith = that folder's id, so only the
   // folder you archived is shown here, as one row, and Unarchive / Delete act on the whole group together.
   // ADDED: projects. A project is archived from the bottom of its page (index.html#projects/{id}); that sets archived: true on
-  // the project and stamps each of its punch lists with archived: true and archivedWithProject = the project's id, so the
-  // project shows here as one row and Unarchive / Delete act on it together with its punch lists. Deleting needs an admin.
+  // the project and stamps each of its lists with archived: true and archivedWithProject = the project's id, so the
+  // project shows here as one row and Unarchive / Delete act on it together with its lists. Deleting needs an admin.
   // Lists and folders can no longer be archived from My Lists, but ones archived before still show here.
   const settingsPath = () => 'workspaces/' + st.wid + '/settings/app';
   const JOB_COLLS = ['items', 'custom', 'rooms', 'hidden']; // the sub-collections stored under each list
@@ -670,7 +670,7 @@
     } catch (ex) { showMsg(friendly(ex, 'Could not unarchive that folder. Try again.'), true); }
   }
 
-  // ADDED: projects archived from a project's page, together with their punch lists
+  // ADDED: projects archived from a project's page, together with their lists
   const archivedJobsOfProject = pid => db.collection('jobs').where('workspaceId', '==', st.wid).where('archivedWithProject', '==', pid).get();
   async function unarchiveProject(pid, btn) {
     try {
@@ -680,14 +680,14 @@
         await db.doc('projects/' + pid).update({ archived: false, archivedAt: null });
       });
       await refreshArchive();
-      showMsg('Project unarchived, with its punch lists. Find it in My projects.');
+      showMsg('Project unarchived, with its lists. Find it in My projects.');
     } catch (ex) { showMsg(friendly(ex, 'Could not unarchive that project. Try again.'), true); }
   }
   async function deleteProject(pid, btn) {
     const p = st.arc.projects[pid];
     if (!p || !st.perm.manageProjects) return;
     const n = projectJobs(pid).length;
-    if (!confirm('Delete the project "' + projTitle(p) + '" for good' + (n ? ', along with its ' + plural(n, 'punch list') + '? Their rooms, items and signatures will be gone, and this' : '? This') + ' can’t be undone.')) return;
+    if (!confirm('Delete the project "' + projTitle(p) + '" for good' + (n ? ', along with its ' + plural(n, 'list') + '? Their rooms, items and signatures will be gone, and this' : '? This') + ' can’t be undone.')) return;
     try {
       await busy(btn, 'Deleting…', async () => {
         const jobs = await archivedJobsOfProject(pid);

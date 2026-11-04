@@ -882,7 +882,7 @@ function stopListening() {
   }); 
   unsubs = []; 
 }
-// Show the home screen with the list of all punch lists
+// Show the home screen with the list of all lists
 function showJobs() {
   stopListening(); jobId = null;
   document.getElementById("jobView").hidden = true;
@@ -1752,7 +1752,7 @@ async function duplicateJob() {
 }
 document.getElementById("dupJob")?.addEventListener("click", duplicateJob);
 // REMOVED: archiving lists and folders. Archiving now happens on a project's page (index.html#projects/{id}), which archives
-// the project together with its punch lists. Lists and folders archived earlier still show in Settings > Archive.
+// the project together with its lists. Lists and folders archived earlier still show in Settings > Archive.
 // Checking/unchecking an item.
 // CHANGED: checking an item no longer marks it done straight away. The box is unticked again and the signature box opens;
 // the item is only marked done once the person types their name and signs (see SIGNATURE TO MARK DONE below).

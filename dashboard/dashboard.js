@@ -14,7 +14,7 @@
   const QUIET_DAYS = 14;       // ADDED: no activity on a project for this many days = it needs a look
   const LONG_LIST = 25;        // ADDED: a punch list with this many open items is "long"
   const NEARLY_DONE = 3;       // this few left = "is N items from done" in the summary
-  const MAX_DETAIL_JOBS = 60;  // read items for at most this many punch lists (most recent first)
+  const MAX_DETAIL_JOBS = 60;  // read items for at most this many lists (most recent first)
   const TASKS_SHOWN = 8;       // open items shown in Up next before "Show all"
 
   const st = {
@@ -267,7 +267,7 @@
   // Sidebar: the projects in the stage picked with Open / Warranty / Closed. Each links to that project's page.
   function renderSide(a) {
     $('dbAddProject').hidden = !st.perm.createProjects;
-    // Search by name, lot, community, address or the name of one of its punch lists. The counts on Open / Warranty / Closed follow the search.
+    // Search by name, lot, community, address or the name of one of its lists. The counts on Open / Warranty / Closed follow the search.
     const q = ($('projSearch').value || '').trim().toLowerCase();
     const found = !q ? a.projects : a.projects.filter(x => [projName(x.p), x.p.address, x.p.community, x.p.lot, ...(x.p._lists || []).map(listTitle)].join(' ').toLowerCase().includes(q));
     renderStageBar(found);
@@ -332,15 +332,15 @@
     const add = (text, href) => parts.push({ text, href });
     if (a.focus) {
       const c = a.shown[0];
-      if (!c.lists) add(projName(a.focus) + ' has no punch lists yet.');
+      if (!c.lists) add(projName(a.focus) + ' has no lists yet.');
       else if (!st.loaded) add('Checking ' + projName(a.focus) + '…');
       else {
         if (a.openTotal) add(plural(a.openTotal, 'item') + (a.openTotal === 1 ? ' is' : ' are') + ' still open on ');
-        else add('Every punch item on ');
+        else add('Every list item on ');
         add(projName(a.focus), projUrl(a.focus.id));
-        // ADDED: say how many punch lists the open items are spread across
+        // ADDED: say how many lists the open items are spread across
         const openLists = a.jobs.filter(j => listCounts(j).open > 0).length;
-        const across = a.openTotal && openLists > 1 ? ', across ' + plural(openLists, 'punch list') : '';
+        const across = a.openTotal && openLists > 1 ? ', across ' + plural(openLists, 'list') : '';
         add(a.openTotal ? across + (a.openTotal <= NEARLY_DONE ? ', so it is almost done.' : '.') : ' is signed off.');
         add(briefDetail(a));
       }
@@ -349,12 +349,12 @@
       add(st.perm.createProjects ? 'Create your first project.' : 'Projects will show up here once someone creates one.', st.perm.createProjects ? 'new-project.html' : null);
     } else {
       if (a.openTotal) {
-        // ADDED: also say how many punch lists the open items are spread across
+        // ADDED: also say how many lists the open items are spread across
         const openLists = a.jobs.filter(j => listCounts(j).open > 0).length;
         add(plural(a.openTotal, 'item'));
-        add((a.openTotal === 1 ? ' is' : ' are') + ' still open' + (openLists ? ' across ' + plural(openLists, 'punch list') : ''));
+        add((a.openTotal === 1 ? ' is' : ' are') + ' still open' + (openLists ? ' across ' + plural(openLists, 'list') : ''));
       }
-      else add('Every punch item is signed off');
+      else add('Every list item is signed off');
       const close = a.projects.filter(x => x.open > 0 && x.open <= NEARLY_DONE).sort((x, y) => x.open - y.open)[0];
       if (close) { add(', and '); add(projShort(close.p), projUrl(close.p.id)); add(' is ' + plural(close.open, 'item') + ' from done.'); }
       else add('.');
@@ -486,7 +486,7 @@
   function fillFeed(ul, a) { // CHANGED: split out so the project dashboard can reuse it
     ul.textContent = '';
     if (!st.loaded && !a.events.length) { ul.appendChild(el('li', 'db-empty', 'Loading activity…')); return; }
-    if (!a.events.length) { ul.appendChild(el('li', 'db-empty', a.focus ? 'Sign-offs, new items and punch lists for this project show up here as your team works.' : 'Sign-offs, new items, punch lists and projects show up here as your team works.')); return; }
+    if (!a.events.length) { ul.appendChild(el('li', 'db-empty', a.focus ? 'Sign-offs, new items and lists for this project show up here as your team works.' : 'Sign-offs, new items, lists and projects show up here as your team works.')); return; }
     let day = '';
     a.events.forEach((e, idx) => {
       const d = dayLabel(e.t);
@@ -526,21 +526,21 @@
     t.appendChild(i);
     return t;
   }
-  const progressText = c => !c.lists ? 'No punch lists yet'
-    : !c.total ? plural(c.lists, 'punch list') + ', no items yet'
-    : (c.open ? plural(c.open, 'open item') + ' of ' + c.total : 'All ' + c.total + ' items signed off') + ' across ' + plural(c.lists, 'punch list');
+  const progressText = c => !c.lists ? 'No lists yet'
+    : !c.total ? plural(c.lists, 'list') + ', no items yet'
+    : (c.open ? plural(c.open, 'open item') + ' of ' + c.total : 'All ' + c.total + ' items signed off') + ' across ' + plural(c.lists, 'list');
 
-  // ---------- Punch lists not in a project (on the dashboard) ----------
+  // ---------- Lists not in a project (on the dashboard) ----------
   function renderLoose(a) {
-    // Punch lists made before projects existed (or whose project was removed): list them so they can be moved into one
+    // Lists made before projects existed (or whose project was removed): list them so they can be moved into one
     const box = $('dbLoose');
     box.textContent = '';
     const loose = st.loose;
     box.hidden = !loose.length;
     if (!loose.length) return;
     const h = el('div', 'db-panel-h');
-    h.append(el('h3', null, 'Punch lists not in a project'));
-    box.append(h, el('p', 'db-sub', st.perm.moveLists && a.projects.length ? 'Move each one into its project so its progress counts there.' : 'These punch lists aren’t part of a project yet.'));
+    h.append(el('h3', null, 'Lists not in a project'));
+    box.append(h, el('p', 'db-sub', st.perm.moveLists && a.projects.length ? 'Move each one into its project so its progress counts there.' : 'These lists aren’t part of a project yet.'));
     const ul = el('ul', 'db-loose');
     loose.forEach(j => {
       const c = listCounts(j);
@@ -589,14 +589,14 @@
     }
   }
 
-  // ADDED: archive a project (editors). The project and its punch lists are hidden everywhere and filed under
-  // Settings > Archive, where they can be unarchived or deleted. Nothing is deleted. Each punch list is stamped
+  // ADDED: archive a project (editors). The project and its lists are hidden everywhere and filed under
+  // Settings > Archive, where they can be unarchived or deleted. Nothing is deleted. Each list is stamped
   // archivedWithProject = the project, so Settings restores (or deletes) them together with it.
   async function archiveProject(p, btn) {
     if (!st.perm.manageProjects) { toast('You don’t have access to archive projects. Ask an admin.'); return; }
     const lists = (p._lists || []).slice();
     const n = lists.length;
-    if (!confirm('Archive “' + projName(p) + '”' + (n ? ' and its ' + plural(n, 'punch list') : '') + '?\n\n'
+    if (!confirm('Archive “' + projName(p) + '”' + (n ? ' and its ' + plural(n, 'list') : '') + '?\n\n'
       + 'It moves to Settings, under Archive, where you can unarchive it or delete it for good.')) return;
     if (navigator.onLine === false) { toast('You’re offline. Connect to the internet to archive.'); return; }
     btn.disabled = true;
@@ -731,7 +731,7 @@
     }
   }
 
-  // The "Folders and lists in this project" box on a project's Punch lists tab
+  // The "Folders and lists in this project" box on a project's lists tab
   function manageBox(p) {
     const mvL = canMoveLists(), mvF = canMoveFolders();
     if (!mvL && !mvF) return null;
@@ -845,9 +845,9 @@
     return box;
   }
 
-  // One project's page: details and overall progress, timeline, then tabs for Punch lists and Daily logs
-  // ---------- ADDED: the Add menu on a project's page ----------
-  // Punch list works now; the rest are listed so people can see what is coming, and are marked Soon.
+  // One project's page: details and overall progress, timeline, then tabs for Lists and Daily logs
+  // ---------- the Add menu on a project's page ----------
+  // List works now; the rest are listed so people can see what is coming, and are marked Soon.
   function projectAddMenu(newListUrl) {
     const wrap = el('div', 'db-add db-add--proj');
     const btn = el('button', 'db-add-btn db-add-btn--label');
@@ -858,7 +858,7 @@
     btn.appendChild(el('span', null, 'Add'));
     const menu = el('div', 'db-add-menu db-add-menu--end');
     menu.setAttribute('role', 'menu');
-    const first = link(newListUrl, null, 'Punch list');
+    const first = link(newListUrl, null, 'List');
     first.setAttribute('role', 'menuitem');
     menu.appendChild(first);
     ['Daily log', 'Schedule event', 'Selection', 'File', 'Message'].forEach(label => {
@@ -908,9 +908,9 @@
     // Headline + the details button
     const h = el('h1', 'db-brief');
     const nm = projName(p);
-    if (!c.lists) h.textContent = nm + ' has no punch lists yet.';
+    if (!c.lists) h.textContent = nm + ' has no lists yet.';
     else if (!st.loaded) h.textContent = 'Checking ' + nm + '…';
-    else if (!c.open) h.textContent = 'Every punch item on ' + nm + ' is signed off.';
+    else if (!c.open) h.textContent = 'Every list item on ' + nm + ' is signed off.';
     else h.textContent = plural(c.open, 'item') + (c.open === 1 ? ' is' : ' are') + ' still open on ' + nm + (c.open <= NEARLY_DONE ? ', so it is almost done.' : '.');
     const head = el('div', 'db-pd-head');
     head.append(h, link(detailsUrl, 'db-btn db-btn--main', 'Show project details'));
@@ -1008,9 +1008,9 @@
     const dl = el('dl', 'db-dl');
     [['Lot', p.lot || '—'], ['Community', p.community || '—'], ['Project date', fmtDay(p.date)],
      ['Progress', c.total ? (c.total - c.open) + ' of ' + c.total + ' items (' + c.pct + '%)' : '—'],
-     ['Punch lists', String(c.lists)], ['Created by', memberName(p.ownerId)]]
+     ['Lists', String(c.lists)], ['Created by', memberName(p.ownerId)]]
       .forEach(([k, v]) => { const d = el('div'); d.append(el('dt', null, k), el('dd', null, v)); dl.appendChild(d); });
-    top.append(tape(c.pct, c.total > 0 && c.open === 0, 'Project progress across all punch lists'), dl);
+    top.append(tape(c.pct, c.total > 0 && c.open === 0, 'Project progress across all lists'), dl);
     // ADDED: the project's stage. People who can edit projects move it along (Open → Warranty → Closed, or back); everyone else just sees it
     const stageRow = el('div', 'db-stage-row');
     stageRow.appendChild(el('span', null, 'Stage'));
@@ -1052,8 +1052,8 @@
       panels.appendChild(pn);
       return [b, pn];
     };
-    // The project's features. Only punch lists are built so far; the others are placeholders.
-    const [tLists, pLists] = mk('lists', 'Punch lists (' + c.lists + ')');
+    // The project's features. Only lists are built so far; the others are placeholders.
+    const [tLists, pLists] = mk('lists', 'Lists (' + c.lists + ')');
     const FEATURES = [
       ['logs', 'Daily logs', 'M8.5 8h7M8.5 12h7M8.5 16h4', 'Record weather, crew on site, deliveries and progress photos for this project each day.', '<rect x="5" y="3.5" width="14" height="17" rx="2"/>'],
       ['schedule', 'Schedule', 'M3.5 10h17M8 3v4M16 3v4', 'Plan this project’s phases and trade visits on one calendar, so everyone knows who’s on site and when.', '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/>'],
@@ -1089,8 +1089,7 @@
       select(to); to.focus();
     });
 
-    // Punch lists tab: the project's folders (with the lists inside them), then lists that aren't in a folder.
-    // CHANGED: folders now show on the project's page, each with its own "Remove from project" button.
+    // Lists tab: the project's folders (with the lists inside them), then lists that aren't in a folder.
     const inProjFolder = j => !!j.folderId && st.folders[j.folderId] && !st.folders[j.folderId].archived && projectOfFolderD(j.folderId) === p.id;
     const isTopProjFolder = id => st.folders[id].projectId === p.id && !(parentOfF(id) && projectOfFolderD(parentOfF(id)) === p.id);
     const projFolders = liveFolders().filter(([id]) => projectOfFolderD(id) === p.id)
@@ -1140,9 +1139,9 @@
     if (!p._lists.length && !projFolders.length) {
       const empty = el('div', 'db-soon db-glass');
       empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON.list.replace(/^<svg[^>]*>|<\/svg>$/g, '') + '</svg>';
-      empty.append(el('h3', null, 'No punch lists yet'),
-        el('p', null, st.perm.manageLists ? 'Add a punch list for each walk: pre-drywall, final, buyer orientation. Their progress adds up here.' : 'Punch lists for this project show up here once someone adds them.'));
-      if (st.perm.manageLists) empty.appendChild(link(newList, 'db-btn db-btn--main', 'New punch list'));
+      empty.append(el('h3', null, 'No lists yet'),
+        el('p', null, st.perm.manageLists ? 'Add a list for each walk: pre-drywall, final, buyer orientation. Their progress adds up here.' : 'Lists for this project show up here once someone adds them.'));
+      if (st.perm.manageLists) empty.appendChild(link(newList, 'db-btn db-btn--main', 'New list'));
       pLists.appendChild(empty);
     } else {
       const ul = el('ul', 'db-lists');
@@ -1164,7 +1163,7 @@
       const foot = el('section', 'db-detail-foot db-glass');
       foot.setAttribute('aria-label', 'Archive this project');
       // CHANGED (data safety): no instant delete here any more. Archive first; delete for good from Settings > Archive.
-      foot.appendChild(el('p', null, 'Archive hides this project and its punch lists. You can bring them back, or delete them for good, from Settings, under Archive.'));
+      foot.appendChild(el('p', null, 'Archive hides this project and its lists. You can bring them back, or delete them for good, from Settings, under Archive.'));
       const acts = el('div', 'acts');
       {
         const arc = el('button', 'db-btn', 'Archive project');

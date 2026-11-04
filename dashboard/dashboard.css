@@ -866,7 +866,7 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
   mask: linear-gradient(#000 0 0) top / 100% 55% no-repeat;
 }
 
-/* Your projects (dashboard) and a project's punch lists: name, percent, tape, and a line of detail */
+/* Your projects (dashboard) and a project's lists: name, percent, tape, and a line of detail */
 .db-progress, .db-lists { 
   list-style: none; 
   margin: 0; 
@@ -933,7 +933,7 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
   margin-bottom: 20px; 
 }
 
-/* Punch lists that aren't in a project yet, each with "Move to project" */
+/* lists that aren't in a project yet, each with "Move to project" */
 .db-loose-box { 
   margin-top: 24px; 
 }
@@ -1807,7 +1807,7 @@ a.db-btn--main, a.db-btn--main:visited {
   font-size: 11px; 
 }
 
-/* A project's feature tabs (Punch lists, Daily logs, Schedule, Selections, Files, Messages): scroll sideways when they don't fit */
+/* A project's feature tabs (Lists, Daily logs, Schedule, Selections, Files, Messages): scroll sideways when they don't fit */
 .db-tabs[role="tablist"] { 
   overflow-x: auto; 
   scrollbar-width: none; 
@@ -1820,7 +1820,7 @@ a.db-btn--main, a.db-btn--main:visited {
   white-space: nowrap; 
 }
 
-/* Punch lists not in a project, now at the bottom of the dashboard */
+/* Lists not in a project, now at the bottom of the dashboard */
 .db-loose-box { 
   margin-top: 20px; 
 }
