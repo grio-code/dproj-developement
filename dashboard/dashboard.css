@@ -1049,7 +1049,7 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
   margin: 0; 
   font-size: 14px; 
   line-height: 1.4; 
-  
+}
 .db-ev p a { 
   color: inherit; 
   font-weight: 600; 
@@ -1987,5 +1987,4 @@ a.db-att-row:focus-visible {
 .db-detail-top { 
   position: relative; 
   z-index: 5; 
-}
 }
