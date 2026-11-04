@@ -59,11 +59,25 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  .gbtn:hover { border-color: var(--lg-text); }
-  .gbtn:active { transform: translateY(1px); }
-  .gbtn:focus-visible { outline: 2px solid var(--lg-text); outline-offset: 2px; }
-  .gbtn[disabled] { opacity: .6; cursor: default; transform: none; }
-  .gbtn svg { width: 20px; height: 20px; flex: none; }
+  .gbtn:hover { 
+    border-color: var(--lg-text); 
+  }
+  .gbtn:active { 
+    transform: translateY(1px); 
+  }
+  .gbtn:focus-visible { 
+    outline: 2px solid var(--lg-text); outline-offset: 2px;
+  }
+  .gbtn[disabled] { 
+    opacity: .6; 
+    cursor: default;
+    transform: none; 
+  }
+  .gbtn svg { 
+    width: 20px; 
+    height: 20px; 
+    flex: none; 
+  }
 
   /* "or" divider between Google and the manual form */
   .login-or {
@@ -83,8 +97,14 @@
   }
 
   /* Email + password form */
-  .login-form { display: grid; gap: 14px; }
-  .login-form .f { display: grid; gap: 6px; }
+  .login-form { 
+    display: grid; 
+    gap: 14px; 
+  }
+  .login-form .f { 
+    display: grid; 
+    gap: 6px; 
+  }
   .login-form label {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 12px;
@@ -102,9 +122,16 @@
     font-family: "IBM Plex Sans", system-ui, sans-serif;
     font-size: 16px; /* 16px stops iPhone Safari from zooming in when the field is tapped */
   }
-  .login-form input:focus-visible { outline: 2px solid var(--lg-text); outline-offset: 1px; }
-  .pw-wrap { position: relative; }
-  .pw-wrap input { padding-right: 64px; }
+  .login-form input:focus-visible { 
+    outline: 2px solid var(--lg-text);
+    outline-offset: 1px; 
+  }
+  .pw-wrap { 
+    position: relative; 
+  }
+  .pw-wrap input { 
+    padding-right: 64px; 
+  }
   .pw-toggle {
     position: absolute;
     top: 50%;
@@ -120,10 +147,20 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .login-form .btn { width: 100%; min-height: 48px; }
-  .login-links { display: flex; justify-content: space-between; gap: 12px; margin-top: 2px; }
+  .login-form .btn { 
+    width: 100%; 
+    min-height: 48px; 
+  }
+  .login-links { 
+    display: flex; 
+    justify-content: space-between; 
+    gap: 12px; 
+    margin-top: 2px; 
+  }
 
-  .login-msg { margin-top: 14px; }
+  .login-msg { 
+    margin-top: 14px; 
+  }
   .login-foot {
     margin: 16px 2px 0;
     font-family: "IBM Plex Sans", system-ui, sans-serif;
