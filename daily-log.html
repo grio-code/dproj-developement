@@ -19,7 +19,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
 <link href="nav-bar/nav.css" rel="stylesheet">
-<link href="daily-log/daily-log.css?v=1" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=19" rel="stylesheet">
+<link href="daily-log/daily-log.css?v=2" rel="stylesheet">
 <link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -31,13 +32,14 @@
 
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="daily-log/daily-log.js?v=1" defer></script>
+<script src="daily-log/daily-log.js?v=2" defer></script>
+<script src="dashboard/side-menu.js?v=1" defer></script>
 </head>
-<body>
+<body class="page-daily-log">
 
 <div class="backdrop" aria-hidden="true"><i class="bd-grid"></i></div>
 
-<!-- Top bar -->
+<!-- Guest top bar. Signed-in users get the same dashboard sidebar as the rest of the app. -->
 <header class="fnav" id="fnav">
   <a class="fnav-brand" href="index.html">HomeHub</a>
   <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
@@ -47,6 +49,50 @@
   </div>
 </header>
 
+<div class="db" id="db">
+  <div class="db-mbar db-glass">
+    <button type="button" class="db-burger" id="dbBurger" aria-controls="dbSide" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <a class="db-logo" href="index.html#dashboard">HomeHub</a>
+  </div>
+  <div class="db-scrim" id="dbScrim" hidden></div>
+  <aside class="db-side db-glass" id="dbSide" aria-label="Menu">
+    <button type="button" class="db-close" id="dbClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="db-brand">
+      <a class="db-logo" href="index.html#dashboard">HomeHub</a>
+      <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
+    </div>
+    <div class="db-addrow">
+      <div class="db-add">
+        <button type="button" class="db-add-btn" id="dbAdd" aria-label="Add new" aria-haspopup="menu" aria-expanded="false" aria-controls="dbAddMenu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <div class="db-add-menu" id="dbAddMenu" role="menu">
+          <a role="menuitem" id="dbAddProject" href="new-project.html">New project</a>
+          <a role="menuitem" href="allLists.html?new=1">New list</a>
+          <a role="menuitem" id="dbAddLog" href="daily-log.html">New daily log</a>
+        </div>
+      </div>
+      <div class="db-tabs db-glass db-seg" role="group" aria-label="Sidebar view">
+        <button type="button" aria-pressed="true" data-side="jobs">Jobs</button>
+        <button type="button" aria-pressed="false" data-side="templates" disabled title="Templates are coming later">Templates</button>
+      </div>
+    </div>
+    <div class="db-tabs db-glass db-stage db-side-stage" id="projStage" role="group" aria-label="Show projects by stage">
+      <button type="button" data-stage="open" aria-pressed="true">Open <span class="n" id="stageOpenN"></span></button>
+      <button type="button" data-stage="warranty" aria-pressed="false">Warranty <span class="n" id="stageWarrantyN"></span></button>
+      <button type="button" data-stage="closed" aria-pressed="false">Closed <span class="n" id="stageClosedN"></span></button>
+    </div>
+    <label class="db-search db-side-search"><span class="sr-only">Search projects</span><input type="search" id="projSearch" placeholder="Search projects" autocomplete="off"></label>
+    <ul class="db-sp" id="dbSideProjects" aria-label="Projects"></ul>
+    <nav class="db-nav db-nav--foot" aria-label="Workspace">
+      <a href="settings.html" class="db-nav-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Settings</a>
+    </nav>
+  </aside>
+  <div class="db-main">
 <main class="wrap dl">
   <a class="dl-back" id="dlBack" href="index.html#dashboard">‹ Dashboard</a>
   <h1>New daily log</h1>
@@ -159,6 +205,14 @@
     </div>
   </form>
 </main>
+  </div><!-- /.db-main -->
+  <nav class="db-dock db-glass" aria-label="Home">
+    <a class="db-dock-home" href="index.html#dashboard">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20"/></svg>
+      <span>Home</span>
+    </a>
+  </nav>
+</div><!-- /.db -->
 
 <footer class="site-copy">© <i>HomeHub LLC</i> 2026</footer>
 </body>
