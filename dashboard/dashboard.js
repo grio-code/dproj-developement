@@ -90,12 +90,16 @@
   }
   const trim = (s, n = 60) => cut(String(s || '').replace(/\s+/g, ' ').trim(), n);
   let toastTimer;
-  function toast(text) {
+  // toast(text) = small message at the bottom. toast(text, 'warranty') (or 'open' / 'closed') = a colored banner at the TOP of the
+  // screen that stays a bit longer, used when a project changes stage so people can't miss it.
+  function toast(text, banner) {
     const t = $('dbToast');
     t.textContent = text;
+    t.className = 'db-toast' + (banner ? ' db-toast--banner is-' + banner : '');
+    void t.offsetWidth; // restart the slide-in if a message is already showing
     t.classList.add('is-on');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('is-on'), 3200);
+    toastTimer = setTimeout(() => t.classList.remove('is-on'), banner ? 6000 : 3200);
   }
   const ICON = {
     check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -574,6 +578,7 @@
   // ADDED: move a project to another stage (editors). Opening the project's stage keeps My projects on that stage
   async function setStage(p, k, btn) {
     if (!st.perm.manageProjects || stageOf(p) === k) return;
+    const from = stageOf(p);
     btn.disabled = true;
     try {
       await db.doc('projects/' + p.id).update({ status: k, updatedAt: new Date().toISOString() });
@@ -581,7 +586,7 @@
       st.stage = k;
       try { sessionStorage.setItem('hh-proj-stage', k); } catch (ex) {}
       renderAll();
-      toast(projName(p) + (k === 'open' ? ' is open again.' : k === 'warranty' ? ' is now under warranty.' : ' is closed.'));
+      toast(projName(p) + ' moved from ' + stageName(from) + ' to ' + stageName(k) + '.', k);
     } catch (ex) {
       console.error(ex);
       btn.disabled = false;

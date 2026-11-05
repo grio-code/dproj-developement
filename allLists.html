@@ -24,7 +24,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
-<link href="dashboard/dashboard.css?v=16" rel="stylesheet"> <!-- the dashboard's left sidebar -->
+<link href="dashboard/dashboard.css?v=18" rel="stylesheet"> <!-- the dashboard's left sidebar -->
 <link href="all-lists/list.css?v=16" rel="stylesheet">
 <script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 <link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet --> 
@@ -37,7 +37,7 @@
 <script src="firebase-starter/perms.js?v=2"></script>
 <script src="firebase-starter/legacy-data.js?v=2"></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="all-lists/allLists.js?v=19" defer></script> <
+<script src="all-lists/allLists.js?v=22" defer></script>
 <script src="dashboard/side-menu.js?v=1" defer></script> 
 
 </head>
@@ -91,6 +91,8 @@
       <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
     </div>
     <!-- the + button, same as the dashboard's: New project, New list (asks for a project and folder), New daily log -->
+    <!-- Same sidebar as the home page (index.html): + menu, Jobs / Templates, Open / Warranty / Closed, search, the projects, then Settings.
+         allLists.js fills in the projects (see "SIDEBAR" in all-lists/allLists.js). -->
     <div class="db-addrow">
       <div class="db-add">
         <button type="button" class="db-add-btn" id="dbAdd" aria-label="Add new" aria-haspopup="menu" aria-expanded="false" aria-controls="dbAddMenu">
@@ -102,26 +104,19 @@
           <span class="db-add-soon" role="menuitem" aria-disabled="true">New daily log <span class="soon">Soon</span></span>
         </div>
       </div>
-    </div>
-    <div class="db-jobs">
-      <label for="dbJob">Project</label>
-      <div class="db-select">
-        <select id="dbJob">
-          <option value="">All projects</option>
-        </select>
+      <div class="db-tabs db-glass db-seg" role="group" aria-label="Sidebar view">
+        <button type="button" aria-pressed="true" data-side="jobs">Jobs</button>
+        <button type="button" aria-pressed="false" data-side="templates" disabled title="Templates are coming later">Templates</button>
       </div>
     </div>
-  <nav class="db-nav" aria-label="Workspace sections">
-    <a href="index.html#dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
-    <a href="index.html#projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>My projects</a>
-    <hr>
-    <a href="allLists.html" class="db-nav-lists" id="navLists" aria-current="page"><svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>Lists</a>
-    <a href="index.html#dailylogs"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>Daily Logs<span class="soon">Soon</span></a>
-    <a href="index.html#schedule"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule<span class="soon">Soon</span></a>
-    <a href="index.html#files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files<span class="soon">Soon</span></a>
-    <a href="index.html#selections"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/><path d="M13 6.5h7.5M3.5 17.5H11"/></svg>Selections<span class="soon">Soon</span></a>
-    <a href="index.html#messages"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Messages<span class="soon">Soon</span></a>
-    <hr>
+    <div class="db-tabs db-glass db-stage db-side-stage" id="projStage" role="group" aria-label="Show projects by stage">
+      <button type="button" data-stage="open" aria-pressed="true">Open <span class="n" id="stageOpenN"></span></button>
+      <button type="button" data-stage="warranty" aria-pressed="false">Warranty <span class="n" id="stageWarrantyN"></span></button>
+      <button type="button" data-stage="closed" aria-pressed="false">Closed <span class="n" id="stageClosedN"></span></button>
+    </div>
+    <label class="db-search db-side-search"><span class="sr-only">Search projects</span><input type="search" id="projSearch" placeholder="Search projects" autocomplete="off"></label>
+    <ul class="db-sp" id="dbSideProjects" aria-label="Projects"></ul>
+  <nav class="db-nav db-nav--foot" aria-label="Workspace">
     <a href="settings.html" class="db-nav-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Settings</a>
   </nav>
   </aside>

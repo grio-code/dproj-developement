@@ -1504,6 +1504,36 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
   transform: translate(-50%, 0);
  }
 
+/* Banner version: a colored bar across the top of the screen. Used when a project moves between Open, Warranty and Closed.
+   Same color whichever stage it moved to. */
+.db-toast--banner {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  width: min(640px, calc(100% - 24px));
+  padding: 14px 18px 14px 50px;
+  border-radius: 12px;
+  font: 600 15px/1.35 var(--f-body);
+  text-align: left;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .18) inset;
+  transform: translate(-50%, -24px);
+}
+.db-toast--banner.is-on { transform: translate(-50%, 0); }
+.db-toast--banner::before {   /* a check mark in a circle */
+  content: "\2713";
+  position: absolute; 
+  left: 14px; 
+  top: 50%;
+  width: 24px; 
+  height: 24px; 
+  margin-top: -12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .25);
+  font: 700 15px/24px var(--f-body);
+  text-align: center;
+}
+.db-toast--banner { background: #2f8f5b; } /* one color for every stage change; change this hex code to recolor the banner */
+
 /* The one orchestrated moment: the briefing and facts settle in once data arrives */
 @keyframes db-in { 
   from { 
@@ -1877,7 +1907,7 @@ a.db-btn--main, a.db-btn--main:visited {
     outline: 2px solid #fff; 
     outline-offset: 2px; 
   }
-  .db-toast { 
+  .db-toast:not(.db-toast--banner) { 
     bottom: calc(92px + env(safe-area-inset-bottom, 0px)); 
   } /* sit above the floating button */
 }

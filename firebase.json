@@ -8,6 +8,17 @@
       "README.md",
       "firebase-debug.log",
       "firebase-starter/firebase.rules"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(html|js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
     ]
   }
 }

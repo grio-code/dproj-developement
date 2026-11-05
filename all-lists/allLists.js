@@ -186,6 +186,18 @@ const ui = {
   due: null // ADDED: item whose "Due date" picker is open
 };
 let jobsList = {};     // all jobs, for the home screen
+// ADDED: the sidebar's project list (same as the home page). projectData = every project's details, keyed by id.
+// The Open / Warranty / Closed choice is shared with the home page through sessionStorage.
+let projectData = {};
+let sideJobs = {};      // the sidebar's own copy of the workspace's lists. jobsList can't be used: it stops updating (and may be empty) while a list is open.
+let sideJobsStarted = false;
+let sideSyncedFor = null; // the open list whose project's stage tab we already switched to
+let sideCounts = {};   // jobId -> { key, open, total }: real item counts for lists in a project (the same way the home page counts them)
+let sideBusy = false, sideAgain = false;
+const SIDE_STAGES = ["open", "warranty", "closed"];
+const stageOf = p => p.status === "warranty" || p.status === "closed" ? p.status : "open"; // projects made before stages existed count as Open
+let sideStage = "open";
+try { const k = sessionStorage.getItem("hh-proj-stage"); if (SIDE_STAGES.includes(k)) sideStage = k; } catch (e) {}
 // ADDED: all folders, as { folderId: { name, createdAt } }. Folders are stored inside the same "settings/app" record as trades and levels
 // (so no new Firebase permissions are needed). Each list remembers its folder with a folderId field on the list's own record.
 let foldersList = {};
@@ -244,8 +256,10 @@ function loadProjects() {
   if (!fs || !uid || !wid) return;
   fs.collection("projects").where("workspaceId", "==", wid).get().then(snap => {
     projectNames = {};
+    projectData = {};
     snap.docs.forEach(d => {
       const p = d.data();
+      if (!p.archived) projectData[d.id] = p;
       if (!p.archived) projectNames[d.id] = p.name || [p.lot && "Lot " + p.lot, p.community].filter(Boolean).join(" · ") || "Untitled project";
     });
     projectsLoaded = true;
@@ -256,6 +270,7 @@ function loadProjects() {
   }).catch(e => console.error("Couldn't load projects:", e));
 }
 
+console.info("HomeHub lists sidebar v22");
 // ================= SIDEBAR (ADDED) =================
 // The dashboard's left sidebar (markup in allLists.html). Shows the workspace, a project picker and the section links.
 // Picking a project opens the dashboard focused on it, the same as picking it on the dashboard.
@@ -281,24 +296,128 @@ function renderSide() {
     }
     else box.textContent = name.trim().charAt(0).toUpperCase();
   }
-  const sel = document.getElementById("dbJob");
-  let focus = "";
-  try { 
-    focus = sessionStorage.getItem("hh-focus") || ""; 
-  } catch (e) {}
-  const ids = Object.keys(projectNames).sort((a, b) => projectNames[a].localeCompare(projectNames[b], undefined, { 
-    sensitivity: "base" 
-  }));
-  sel.textContent = "";
-  sel.appendChild(new Option(ids.length ? "All projects (" + ids.length + ")" : (projectsLoaded ? "No projects yet" : "All projects"), ""));
-  ids.forEach(id => sel.appendChild(new Option(projectNames[id], id)));
-  sel.value = focus;
-  if (sel.value !== focus) sel.value = "";
+  renderProjectSide();
   document.getElementById("dbNewProj").hidden = !perm.createProjects; // CHANGED: needs "Create projects"
 }
-// CHANGED: picking a project opens that project's own dashboard (the dashboard no longer has a focus mode)
-document.getElementById("dbJob").addEventListener("change", e => {
-  location.href = "index.html" + (e.target.value ? "#projects/" + encodeURIComponent(e.target.value) : "#dashboard");
+// ADDED: the sidebar's project list, the same as the home page: Open / Warranty / Closed buttons (with counts), a search box,
+// then each project with its address and a progress bar. Each project opens its own page on the home screen.
+// Count each project's items from the items themselves, like the home page does. The numbers saved on a list can be missing or old,
+// which left the bars empty. Only lists that changed since the last count are read again (at most 60, most recent first).
+const sideKey = j => [j.updatedAt, j.openCount, j.totalCount].join("|");
+// The sidebar's own live feed of the workspace's lists. It keeps running when a list is open (the main feed stops), and each change
+// to a list (say an item ticked off) updates the project's bar.
+function startSideJobs() {
+  if (!fs || !uid || !wid || sideJobsStarted) return;
+  sideJobsStarted = true;
+  fs.collection("jobs").where("workspaceId", "==", wid).onSnapshot(snap => {
+    sideJobs = {};
+    snap.docs.forEach(d => { sideJobs[d.id] = d.data(); });
+    try { renderProjectSide(); } catch (e) { console.error("Couldn't draw the sidebar projects:", e); }
+    loadSideCounts().catch(e => console.error("Sidebar counts failed:", e));
+  }, e => { sideJobsStarted = false; console.error("Couldn't load lists for the sidebar:", e); });
+}
+async function loadSideCounts() {
+  if (!fs || !sideJobsStarted) return;
+  if (sideBusy) { sideAgain = true; return; }
+  sideBusy = true;
+  try {
+    const todo = Object.entries(sideJobs).filter(([, j]) => !j.archived && j.projectId)
+      .sort((a, b) => sideMs(b[1].updatedAt || b[1].createdAt) - sideMs(a[1].updatedAt || a[1].createdAt)).slice(0, 60)
+      .filter(([id, j]) => !sideCounts[id] || sideCounts[id].key !== sideKey(j));
+    if (todo.length) {
+      await Promise.all(todo.map(async ([id, j]) => {
+        try {
+          const get = c => fs.collection("jobs/" + id + "/" + c).get().then(sn => Object.fromEntries(sn.docs.map(d => [d.id, d.data()])));
+          const [custom, items, hidden] = await Promise.all([get("custom"), get("items"), get("hidden")]);
+          const live = Object.entries(custom).filter(([, c]) => c && c.text && !(hidden[c.room] && hidden[c.room].hidden));
+          sideCounts[id] = { key: sideKey(j), total: live.length, open: live.filter(([cid]) => !(items[cid] && items[cid].done)).length };
+        } catch (e) { console.error("Couldn't count the items on list " + id, e); }
+      }));
+      renderProjectSide();
+    }
+  } finally {
+    sideBusy = false;
+    if (sideAgain) { sideAgain = false; loadSideCounts(); }
+  }
+}
+const sideMs = v => !v ? 0 : typeof v === "string" ? (Date.parse(v) || 0) : v.toMillis ? v.toMillis() : v.toDate ? +v.toDate() : +v || 0;
+function renderProjectSide() {
+  const ul = document.getElementById("dbSideProjects");
+  if (!ul) return;
+  const q = (document.getElementById("projSearch").value || "").trim().toLowerCase();
+  // The project of the list that is open (if any). Its sidebar entry is highlighted, like the project page you are on at home.
+  const curPid = jobId && sideJobs[jobId] && projectData[sideJobs[jobId].projectId] ? sideJobs[jobId].projectId : "";
+  if (curPid && sideSyncedFor !== jobId) { // show the stage tab that holds it, once per list, so the highlight is visible
+    sideSyncedFor = jobId;
+    sideStage = stageOf(projectData[curPid]);
+    try { sessionStorage.setItem("hh-proj-stage", sideStage); } catch (ex) {}
+  }
+  const rows = Object.keys(projectData).map(id => {
+    const p = projectData[id];
+    const lists = Object.entries(sideJobs).filter(([, j]) => !j.archived && j.projectId === id).map(([jid, j]) => Object.assign({}, j, { id: jid }));
+    let open = 0, total = 0;
+    lists.forEach(j => {
+      const c = sideCounts[j.id] || {}; // the real count if we have it, else the counts saved on the list
+      open += typeof c.open === "number" ? c.open : (j.openCount || 0);
+      total += typeof c.total === "number" ? c.total : (j.totalCount || 0);
+    });
+    const listNames = lists.map(j => j.name || [j.lot && "Lot " + j.lot, j.community].filter(Boolean).join(" "));
+    // most recently touched first, like the home page (the project itself or any of its lists)
+    const last = Math.max(sideMs(p.updatedAt), sideMs(p.createdAt), ...lists.map(j => Math.max(sideMs(j.updatedAt), sideMs(j.createdAt))));
+    return { id, p, open, total, last, pct: total ? Math.round((total - open) / total * 100) : 0, listNames };
+  }).sort((a, b) => b.last - a.last);
+  // Search by name, lot, community, address or the name of one of its lists. The counts follow the search.
+  const found = !q ? rows : rows.filter(x => [projectNames[x.id], x.p.address, x.p.community, x.p.lot, ...x.listNames].join(" ").toLowerCase().includes(q));
+  document.querySelectorAll("#projStage [data-stage]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.stage === sideStage)));
+  const n = k => found.filter(x => stageOf(x.p) === k).length;
+  document.getElementById("stageOpenN").textContent = n("open");
+  document.getElementById("stageWarrantyN").textContent = n("warranty");
+  document.getElementById("stageClosedN").textContent = n("closed");
+  ul.textContent = "";
+  const list = found.filter(x => stageOf(x.p) === sideStage);
+  if (!list.length) {
+    const li = document.createElement("li");
+    li.className = "db-empty";
+    const label = sideStage;
+    li.textContent = !projectsLoaded ? "Loading projects…"
+      : !rows.length ? (perm.createProjects ? "No projects yet. Use + to create one." : "No projects yet.")
+      : q ? "No " + label + " projects match “" + q + "”." + (found.length ? " Try another tab." : "")
+      : "No " + label + " projects.";
+    ul.appendChild(li);
+    return;
+  }
+  list.forEach(x => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "index.html#projects/" + encodeURIComponent(x.id);
+    if (x.id === curPid) a.setAttribute("aria-current", "page");
+    const b = document.createElement("b");
+    b.textContent = projectNames[x.id];
+    const addr = document.createElement("span");
+    addr.className = "addr";
+    addr.textContent = x.p.address || [x.p.lot && "Lot " + x.p.lot, x.p.community].filter(Boolean).join(", ") || "No address yet";
+    const tape = document.createElement("div");
+    tape.className = "db-tape" + (x.total > 0 && x.open === 0 ? " is-done" : "");
+    tape.setAttribute("role", "progressbar");
+    tape.setAttribute("aria-valuemin", "0");
+    tape.setAttribute("aria-valuemax", "100");
+    tape.setAttribute("aria-valuenow", String(x.pct));
+    tape.setAttribute("aria-label", projectNames[x.id] + " progress");
+    const bar = document.createElement("i");
+    bar.style.setProperty("--p", x.pct);
+    tape.appendChild(bar);
+    a.append(b, addr, tape);
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+}
+document.getElementById("projSearch").addEventListener("input", renderProjectSide);
+document.getElementById("projStage").addEventListener("click", e => {
+  const b = e.target.closest("[data-stage]");
+  if (!b) return;
+  sideStage = b.dataset.stage;
+  try { sessionStorage.setItem("hh-proj-stage", sideStage); } catch (ex) {}
+  renderProjectSide();
 });
 // ADDED: the + menu in the sidebar (same as the dashboard): New project, New list (asks for project and folder), New daily log (soon)
 const navAddBtn = document.getElementById("dbAdd"), navAddMenu = document.getElementById("dbAddMenu");
@@ -940,6 +1059,7 @@ function stopListening() {
 // Show the home screen with the list of all punch lists
 function showJobs() {
   stopListening(); jobId = null;
+  try { renderProjectSide(); } catch (e) {} // ADDED: no project highlighted on the lists screen
   document.getElementById("jobView").hidden = true;
   document.getElementById("jobsView").hidden = false;
   document.title = "Lists";
@@ -982,6 +1102,7 @@ function showJobs() {
 // Open one punch list by id
 function showJob(id) {
   stopListening(); jobId = id; dirtyMeta = {};
+  try { renderProjectSide(); } catch (e) {} // ADDED: highlight this list's project in the sidebar
   // Firestore mode starts empty and fills in as data arrives; local mode loads from localStorage
   state = fs ? blank() : Object.assign(blank(), local.jobs[id] || { 
     meta: { 
@@ -2044,6 +2165,7 @@ function applyWhoFilter() {
 function boot() {
   loadSettings();
   loadProjects(); // ADDED: project names for folders that belong to a project
+  startSideJobs(); // ADDED: the sidebar's project progress bars
   loadWorkspace(); // ADDED: workspace name and logo for the sidebar
   renderSide();
   // If we arrived from the dock's "New List" button, create a list right away and open it
