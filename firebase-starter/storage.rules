@@ -1,0 +1,52 @@
+// ©HomeHub LLC 2026
+// Firebase Storage rules for HomeHub: the photos and videos on daily logs.
+//
+// Files live at   workspaces/{workspaceId}/projects/{projectId}/dailyLogs/{logId}/{fileName}
+// Who may do what is read from Firestore (the same members/{uid} record the Firestore rules use), so this file has to be
+// published together with firebase.rules. Publish it from Firebase console > Storage > Rules, or with
+//   firebase deploy --only storage
+// The first time, Firebase may ask you to let Storage read Firestore rules data: say yes.
+//
+// Nothing here lets anyone overwrite or change a saved file. A file can be deleted only together with an archived project
+// (Settings > Archive > Delete), the same "archive first, always" rule as the rest of the app (see README.md, data safety).
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ---------- helpers (the same logic as firebase.rules) ----------
+    function signedIn() { return request.auth != null; }
+    function memberPath(wid) { return /databases/(default)/documents/workspaces/$(wid)/members/$(request.auth.uid); }
+    function isMember(wid) { return signedIn() && firestore.exists(memberPath(wid)); }
+    function isAdmin(wid) {
+      return signedIn() && (firestore.get(/databases/(default)/documents/workspaces/$(wid)).data.ownerId == request.auth.uid
+        || (isMember(wid) && firestore.get(memberPath(wid)).data.get('admin', false) == true));
+    }
+    // Admins can do everything; other members need the permission switched on in Settings > Members > Access.
+    // A member saved before permissions existed (canEdit: true, no perms) has them all.
+    function can(wid, p) {
+      return isAdmin(wid) || (isMember(wid) && (
+           (('perms' in firestore.get(memberPath(wid)).data) && firestore.get(memberPath(wid)).data.perms.get(p, false) == true)
+        || (!('perms' in firestore.get(memberPath(wid)).data) && firestore.get(memberPath(wid)).data.get('canEdit', false) == true)));
+    }
+    function project(pid) { return firestore.get(/databases/(default)/documents/projects/$(pid)).data; }
+
+    // Photos up to 25 MB, videos up to 500 MB. Keep these in step with MAX_IMAGE_MB / MAX_VIDEO_MB in daily-log/daily-log.js.
+    function okFile() {
+      return (request.resource.contentType.matches('image/.*') && request.resource.size < 25 * 1024 * 1024)
+          || (request.resource.contentType.matches('video/.*') && request.resource.size < 500 * 1024 * 1024);
+    }
+
+    // ---------- daily log photos and videos ----------
+    match /workspaces/{wid}/projects/{pid}/dailyLogs/{logId}/{fileName} {
+      allow read: if isMember(wid);
+      // Add a new file only: the project must be in this workspace and not archived, and the file must be a photo or video.
+      allow create: if can(wid, 'addDailyLogs')
+                    && project(pid).workspaceId == wid
+                    && project(pid).get('archived', false) != true
+                    && okFile();
+      // No update. Delete only with an archived project.
+      allow delete: if can(wid, 'manageProjects') && project(pid).get('archived', false) == true;
+    }
+  }
+}

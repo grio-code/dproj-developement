@@ -695,6 +695,18 @@
         // ADDED: the project's client contacts (projects/{id}/clients) go with it; Firestore doesn't delete sub-collections by itself
         const clients = await db.collection('projects/' + pid + '/clients').get();
         await inBatches(clients.docs, (b, d) => b.delete(d.ref));
+        // ADDED: its daily logs go too, and so do their photos and videos in Storage (Firestore and Storage don't clean up after each other).
+        // The files go first: if one can't be removed this stops, and the project and its logs are still there to try again.
+        const logs = await db.collection('projects/' + pid + '/dailyLogs').get();
+        const logDir = 'workspaces/' + st.wid + '/projects/' + pid + '/dailyLogs/';
+        for (const d of logs.docs) {
+          for (const m of (Array.isArray(d.data().media) ? d.data().media : [])) {
+            if (!m || typeof m.path !== 'string' || !m.path.startsWith(logDir)) continue; // only files that belong to this project's logs
+            try { await firebase.storage().ref(m.path).delete(); }
+            catch (ex) { if (!ex || ex.code !== 'storage/object-not-found') throw ex; } // already gone is fine
+          }
+        }
+        await inBatches(logs.docs, (b, d) => b.delete(d.ref));
         await db.doc('projects/' + pid).delete();
       });
       await refreshArchive();

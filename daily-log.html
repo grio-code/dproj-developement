@@ -1,0 +1,165 @@
+<!-- ©HomeHub LLC 2026 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>New daily log · HomeHub</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HomeHub">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0d1820">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="daily-log/daily-log.css?v=1" rel="stylesheet">
+<link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script> <!-- photos and videos -->
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="firebase-starter/perms.js?v=3"></script> <!-- who may do what (shared by every page) -->
+
+<script src="nav-bar/nav.js" defer></script>
+<script src="nav-bar/auth-ui.js" defer></script>
+<script src="daily-log/daily-log.js?v=1" defer></script>
+</head>
+<body>
+
+<div class="backdrop" aria-hidden="true"><i class="bd-grid"></i></div>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">HomeHub</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<main class="wrap dl">
+  <a class="dl-back" id="dlBack" href="index.html#dashboard">‹ Dashboard</a>
+  <h1>New daily log</h1>
+  <p class="dl-lede">Record the day on site. Everything below is required, and a log can’t be changed once it’s submitted.</p>
+
+  <div class="dl-msg" id="dlMsg" role="alert" hidden></div>
+
+  <form id="dlForm" novalidate>
+
+    <!-- 1. The day -->
+    <section class="dl-card" aria-labelledby="dlDayH">
+      <h2 id="dlDayH">The day</h2>
+      <div class="dl-grid">
+
+        <!-- Opened from a project's page (?project=id): the project is already known, so it is just shown.
+             Opened from anywhere else: pick one of the open projects. -->
+        <div class="f dl-wide" id="dlProjectPick">
+          <label for="dlProject">Project</label>
+          <select id="dlProject" required disabled>
+            <option value="">Loading projects…</option>
+          </select>
+          <span class="f-err" id="dlProjectErr"></span>
+        </div>
+        <div class="f dl-wide" id="dlProjectFixed" hidden>
+          <span class="dl-label" id="dlProjectFixedL">Project</span>
+          <p class="dl-fixed" id="dlProjectFixedName" aria-labelledby="dlProjectFixedL"></p>
+        </div>
+
+        <div class="f">
+          <label for="dlDate">Date</label>
+          <input id="dlDate" type="date" required>
+          <span class="f-err" id="dlDateErr"></span>
+        </div>
+        <div class="f">
+          <label for="dlTitle">Title</label>
+          <input id="dlTitle" maxlength="100" required placeholder="Framing work" autocomplete="off">
+          <span class="f-err" id="dlTitleErr"></span>
+        </div>
+        <div class="f dl-wide">
+          <label for="dlOnSite">Who was on site?</label>
+          <textarea id="dlOnSite" rows="3" maxlength="500" required placeholder="Names of the subs and trades who were with you, e.g. Mike (Acme Framing), Dana (electrical)"></textarea>
+          <span class="f-err" id="dlOnSiteErr"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Photos and videos -->
+    <section class="dl-card" aria-labelledby="dlFilesH">
+      <h2 id="dlFilesH">Photos and videos</h2>
+      <p class="f-hint" id="dlClientNote">Add at least one. Photos and videos on a daily log are shared with the project’s clients.</p>
+
+      <div class="dl-add">
+        <div class="f dl-cat">
+          <label for="dlCat">Add to</label>
+          <select id="dlCat">
+            <option value="">Choose a category…</option>
+          </select>
+        </div>
+        <button type="button" class="btn dl-pick" id="dlPick">Add photos or videos</button>
+        <input type="file" id="dlInput" accept="image/*,video/*" multiple hidden>
+      </div>
+      <p class="f-hint">Pick the category first, then add. Each file keeps the category it was added under, and you can change it below.</p>
+      <span class="f-err" id="dlFilesErr"></span>
+
+      <ul class="dl-files" id="dlFiles" aria-label="Files for this log"></ul>
+      <p class="dl-count" id="dlCount" aria-live="polite"></p>
+    </section>
+
+    <!-- 3. Notes -->
+    <section class="dl-card" aria-labelledby="dlNotesH">
+      <h2 id="dlNotesH">Notes</h2>
+      <div class="dl-grid">
+        <div class="f dl-wide">
+          <label for="dlProgress">Progress made today</label>
+          <textarea id="dlProgress" rows="4" maxlength="3000" required placeholder="What got done"></textarea>
+          <span class="f-err" id="dlProgressErr"></span>
+        </div>
+        <div class="f dl-wide">
+          <label for="dlIssues">Issues that came up on site</label>
+          <textarea id="dlIssues" rows="4" maxlength="3000" required placeholder="Delays, damage, missing materials, safety, anything that needs attention"></textarea>
+          <span class="f-hint">If there were none, write “None”.</span>
+          <span class="f-err" id="dlIssuesErr"></span>
+        </div>
+        <div class="f dl-wide">
+          <label for="dlOther">Anything else that’s important about the day</label>
+          <textarea id="dlOther" rows="3" maxlength="3000" required placeholder="Deliveries, inspections, visitors, decisions made"></textarea>
+          <span class="f-hint">If there’s nothing else, write “None”.</span>
+          <span class="f-err" id="dlOtherErr"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Weather: filled in for you, nothing to type -->
+    <section class="dl-card" aria-labelledby="dlWxH">
+      <h2 id="dlWxH">Weather</h2>
+      <p class="f-hint">Added to the log for you, based on the date above.</p>
+      <div class="dl-wx" id="dlWx" aria-live="polite">Choose a project and a date to see the weather.</div>
+      <button type="button" class="btn btn--quiet dl-wx-retry" id="dlWxRetry" hidden>Try again</button>
+    </section>
+
+    <!-- Upload progress, shown while submitting -->
+    <div class="dl-prog" id="dlProg" hidden aria-live="polite">
+      <div class="dl-prog-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="dlProgBar"><i id="dlProgFill"></i></div>
+      <p id="dlProgText"></p>
+    </div>
+
+    <div class="dl-actions">
+      <button type="submit" class="btn btn--primary" id="dlSave">Submit daily log</button>
+      <a class="btn" id="dlCancel" href="index.html#dashboard">Cancel</a>
+    </div>
+  </form>
+</main>
+
+<footer class="site-copy">© <i>HomeHub LLC</i> 2026</footer>
+</body>
+</html>

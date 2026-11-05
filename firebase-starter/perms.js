@@ -15,7 +15,8 @@
     ['manageLists',    'Create, edit and delete lists',     'Make lists and change their rooms, items, details, folders and trades.'],
     ['moveLists',      'Move lists into projects',          'Put a punch list that isn’t in a project into one.'],
     ['addTodos',       'Add to-dos',                        'Add new items to a list.'],
-    ['assignTasks',    'Assign tasks',                      'Assign an item on any list to someone in the workspace.']
+    ['assignTasks',    'Assign tasks',                      'Assign an item on any list to someone in the workspace.'],
+    ['addDailyLogs',  'Add daily logs',                    'Record the day on a project: who was on site, progress, issues, weather, photos and videos.']
   ];
   const KEYS = LIST.map(x => x[0]);
 

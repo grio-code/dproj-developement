@@ -24,7 +24,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
-<link href="dashboard/dashboard.css?v=18" rel="stylesheet"> <!-- the dashboard's left sidebar -->
+<link href="dashboard/dashboard.css?v=19" rel="stylesheet"> <!-- the dashboard's left sidebar -->
 <link href="all-lists/list.css?v=16" rel="stylesheet">
 <script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 <link href="theme.css?v=4" rel="stylesheet"> <!-- home page look; keep this the last stylesheet --> 
@@ -34,10 +34,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-starter/firebase-config.js"></script>
-<script src="firebase-starter/perms.js?v=2"></script>
+<script src="firebase-starter/perms.js?v=3"></script>
 <script src="firebase-starter/legacy-data.js?v=2"></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="all-lists/allLists.js?v=22" defer></script>
+<script src="all-lists/allLists.js?v=23" defer></script>
 <script src="dashboard/side-menu.js?v=1" defer></script> 
 
 </head>
@@ -101,7 +101,7 @@
         <div class="db-add-menu" id="dbAddMenu" role="menu">
           <a role="menuitem" id="dbNewProj" href="new-project.html">New project</a>
           <a role="menuitem" id="dbAddList" href="allLists.html?new=1">New list</a>
-          <span class="db-add-soon" role="menuitem" aria-disabled="true">New daily log <span class="soon">Soon</span></span>
+          <a role="menuitem" id="dbAddLog" href="daily-log.html" hidden>New daily log</a>
         </div>
       </div>
       <div class="db-tabs db-glass db-seg" role="group" aria-label="Sidebar view">

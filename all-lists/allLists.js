@@ -298,6 +298,7 @@ function renderSide() {
   }
   renderProjectSide();
   document.getElementById("dbNewProj").hidden = !perm.createProjects; // CHANGED: needs "Create projects"
+  document.getElementById("dbAddLog").hidden = !perm.addDailyLogs; // ADDED: needs "Add daily logs"
 }
 // ADDED: the sidebar's project list, the same as the home page: Open / Warranty / Closed buttons (with counts), a search box,
 // then each project with its address and a progress bar. Each project opens its own page on the home screen.

@@ -271,6 +271,7 @@
   // Sidebar: the projects in the stage picked with Open / Warranty / Closed. Each links to that project's page.
   function renderSide(a) {
     $('dbAddProject').hidden = !st.perm.createProjects;
+    $('dbAddLog').hidden = !st.perm.addDailyLogs; // ADDED: "New daily log" needs the "Add daily logs" permission
     // Search by name, lot, community, address or the name of one of its lists. The counts on Open / Warranty / Closed follow the search.
     const q = ($('projSearch').value || '').trim().toLowerCase();
     const found = !q ? a.projects : a.projects.filter(x => [projName(x.p), x.p.address, x.p.community, x.p.lot, ...(x.p._lists || []).map(listTitle)].join(' ').toLowerCase().includes(q));
@@ -853,7 +854,7 @@
   // One project's page: details and overall progress, timeline, then tabs for Lists and Daily logs
   // ---------- the Add menu on a project's page ----------
   // List works now; the rest are listed so people can see what is coming, and are marked Soon.
-  function projectAddMenu(newListUrl) {
+  function projectAddMenu(newListUrl, newLogUrl) {
     const wrap = el('div', 'db-add db-add--proj');
     const btn = el('button', 'db-add-btn db-add-btn--label');
     btn.type = 'button';
@@ -863,10 +864,18 @@
     btn.appendChild(el('span', null, 'Add'));
     const menu = el('div', 'db-add-menu db-add-menu--end');
     menu.setAttribute('role', 'menu');
-    const first = link(newListUrl, null, 'List');
-    first.setAttribute('role', 'menuitem');
-    menu.appendChild(first);
-    ['Daily log', 'Schedule event', 'Selection', 'File', 'Message'].forEach(label => {
+    // CHANGED: List needs "Create, edit and delete lists"; Daily log needs "Add daily logs". Each shows only for people who have it.
+    if (st.perm.manageLists) {
+      const first = link(newListUrl, null, 'List');
+      first.setAttribute('role', 'menuitem');
+      menu.appendChild(first);
+    }
+    if (st.perm.addDailyLogs) {
+      const log = link(newLogUrl, null, 'Daily log');
+      log.setAttribute('role', 'menuitem');
+      menu.appendChild(log);
+    }
+    ['Schedule event', 'Selection', 'File', 'Message'].forEach(label => {
       const item = el('span', 'db-add-soon');
       item.setAttribute('role', 'menuitem');
       item.setAttribute('aria-disabled', 'true');
@@ -997,6 +1006,7 @@
     if (!p) { box.appendChild(el('p', 'db-empty', st.loaded ? 'That project was not found. It may have been deleted.' : 'Loading…')); return; }
     const c = projCounts(p);
     const newList = 'allLists.html?new=1&project=' + encodeURIComponent(p.id);
+    const newLog = 'daily-log.html?project=' + encodeURIComponent(p.id); // ADDED: the daily log page already knows which project
 
     const top = el('div', 'db-detail-top db-glass');
     const head = el('div');
@@ -1004,7 +1014,7 @@
     top.appendChild(head);
     const actions = el('div', 'db-detail-actions');
     // CHANGED: the "New punch list" button is now an Add menu (punch list, daily log, schedule event, selection, file, message)
-    if (st.perm.manageLists) actions.appendChild(projectAddMenu(newList));
+    if (st.perm.manageLists || st.perm.addDailyLogs) actions.appendChild(projectAddMenu(newList, newLog));
     // FIXED: the Client information button is back. It opens project-clients.html for this project (view-only unless you can edit projects)
     actions.appendChild(link('project-clients.html?project=' + encodeURIComponent(p.id), 'db-btn', 'Client information'));
     if (st.perm.manageProjects) actions.appendChild(link('new-project.html?edit=' + encodeURIComponent(p.id), 'db-btn', 'Edit project'));
@@ -1057,7 +1067,7 @@
       panels.appendChild(pn);
       return [b, pn];
     };
-    // The project's features. Only lists are built so far; the others are placeholders.
+    // The project's features. Lists and Daily logs are built; the others are placeholders.
     const [tLists, pLists] = mk('lists', 'Lists (' + c.lists + ')');
     const FEATURES = [
       ['logs', 'Daily logs', 'M8.5 8h7M8.5 12h7M8.5 16h4', 'Record weather, crew on site, deliveries and progress photos for this project each day.', '<rect x="5" y="3.5" width="14" height="17" rx="2"/>'],
@@ -1070,6 +1080,7 @@
     FEATURES.forEach(([key, label, extra, text, shapes]) => {
       const [b, pn] = mk(key, label);
       pairs.push([b, pn, key]);
+      if (key === 'logs') { pn.appendChild(logsPanel(p, b, newLog)); return; } // ADDED: daily logs are built
       if (key === 'files') { pn.appendChild(filesDrop()); return; }
       const soon = el('div', 'db-soon db-glass');
       soon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + shapes + (extra ? '<path d="' + extra + '"/>' : '') + '</svg>';
@@ -1159,6 +1170,10 @@
     if (mg) pLists.appendChild(mg);
 
     box.append(tabs, panels);
+    // ADDED: coming back from daily-log.html after saving a log: open on the Daily logs tab and say it was added
+    let afterLog = '';
+    try { afterLog = sessionStorage.getItem('hh-after-log') || ''; if (afterLog) sessionStorage.removeItem('hh-after-log'); } catch (e) {}
+    if (afterLog === p.id) { st.tab = 'logs'; st.tabFor = p.id; setTimeout(() => toast('Daily log added.'), 400); }
     const keep = st.tabFor === p.id ? pairs.find(x => x[2] === st.tab) : null;
     select(keep ? keep[0] : tLists);
 
@@ -1293,6 +1308,123 @@
     if (state === 'granted') askLocation();                // refresh the location quietly
     else if (saved) fetchWeather(saved.lat, saved.lon);    // last place we knew
     else if (state !== 'denied') weatherButton();          // ask only when they choose to
+  }
+
+  // ================= ADDED: DAILY LOGS (the Daily logs tab on a project's page) =================
+  // Written by daily-log.html as projects/{id}/dailyLogs/{logId}. Newest day first, LOGS_PAGE at a time. They are read once per
+  // project and kept in st.logs, so the page can redraw (it does that often) without asking Firestore again.
+  const LOGS_PAGE = 20;
+  const LOG_CATS = ['Interior', 'Exterior', 'Site', 'Other']; // the order photos and videos are grouped in (same list as daily-log.js)
+  const SAFE_MEDIA = /^https:\/\/firebasestorage\.googleapis\.com\//; // only open links that really point at Firebase Storage
+  st.logs = {};
+  function wxLine(w) {
+    const t = n => Math.round(n) + '°' + w.tempUnit;
+    return [
+      w.desc,
+      w.hi != null && w.lo != null ? 'High ' + t(w.hi) + ', low ' + t(w.lo) : '',
+      w.precip != null ? (w.precip > 0 ? w.precip + ' ' + w.precipUnit + ' precipitation' : 'No precipitation') : '',
+      w.wind != null ? 'Wind up to ' + Math.round(w.wind) + ' ' + w.windUnit : ''
+    ].filter(Boolean).join(' · ');
+  }
+  function logNote(label, text) {
+    const d = el('div', 'db-log-note');
+    d.append(el('h4', null, label), el('p', null, text || '—'));
+    return d;
+  }
+  function logMedia(media) {
+    const wrap = el('div', 'db-log-media');
+    const items = (Array.isArray(media) ? media : []).filter(m => m && typeof m.url === 'string' && SAFE_MEDIA.test(m.url));
+    const cats = LOG_CATS.concat(items.map(m => m.category).filter(c => c && !LOG_CATS.includes(c)));
+    [...new Set(cats)].forEach(cat => {
+      const group = items.filter(m => (m.category || 'Other') === cat);
+      if (!group.length) return;
+      const photos = group.filter(m => m.type !== 'video').length, videos = group.length - photos;
+      wrap.appendChild(el('h4', null, cat + ' · ' + [photos && plural(photos, 'photo'), videos && plural(videos, 'video')].filter(Boolean).join(', ')));
+      const tiles = el('div', 'db-log-tiles');
+      group.forEach(m => {
+        if (m.type === 'video') {
+          const v = el('video'); v.src = m.url; v.controls = true; v.preload = 'metadata'; v.playsInline = true;
+          v.setAttribute('aria-label', m.name || 'Video');
+          tiles.appendChild(v);
+        } else {
+          const a = link(m.url, 'db-log-photo'); a.target = '_blank'; a.rel = 'noopener';
+          a.setAttribute('aria-label', 'Open ' + (m.name || 'photo') + ' full size');
+          const img = el('img'); img.src = m.url; img.alt = m.name || 'Photo from the site'; img.loading = 'lazy';
+          a.appendChild(img);
+          tiles.appendChild(a);
+        }
+      });
+      wrap.appendChild(tiles);
+    });
+    return wrap;
+  }
+  function logCard(d, open) {
+    const det = el('details', 'db-log db-glass');
+    det.open = open; // the latest one starts open
+    const sum = el('summary');
+    const top = el('span', 'db-log-top');
+    top.append(el('b', null, fmtDay(d.date)), el('span', 'db-log-title', d.title || 'Daily log'));
+    const n = Array.isArray(d.media) ? d.media.length : 0;
+    const meta = [d.weather && d.weather.desc ? d.weather.desc + (d.weather.hi != null ? ', ' + Math.round(d.weather.hi) + '°' : '') : '', n ? plural(n, 'file') : ''].filter(Boolean).join(' · ');
+    sum.append(top, el('small', null, meta));
+    const body = el('div', 'db-log-body');
+    const rows = el('dl', 'db-log-facts');
+    [['Weather', d.weather ? (wxLine(d.weather) || 'Not available') : 'Not available'], ['On site', d.onSite || '—']].forEach(([k, v]) => {
+      const r = el('div'); r.append(el('dt', null, k), el('dd', null, v)); rows.appendChild(r);
+    });
+    body.append(rows,
+      logNote('Progress made today', d.progress), logNote('Issues on site', d.issues), logNote('Anything else', d.other),
+      logMedia(d.media),
+      el('p', 'db-log-by', 'Logged by ' + (d.createdByName || 'someone') + (toMs(d.createdAt) ? ' · ' + ago(toMs(d.createdAt)) : '')));
+    det.append(sum, body);
+    return det;
+  }
+  function logsPanel(p, tabBtn, newLogUrl) {
+    const box = el('div', 'db-logs-wrap');
+    const c = st.logs[p.id] = st.logs[p.id] || { docs: [], cursor: null, done: false, loading: false, failed: '' };
+    const head = el('div', 'db-logs-head');
+    head.appendChild(el('h3', null, 'Daily logs'));
+    if (st.perm.addDailyLogs) head.appendChild(link(newLogUrl, 'db-btn db-btn--main', 'New daily log'));
+    const list = el('ul', 'db-logs');
+    const status = el('p', 'db-sub');
+    const more = el('button', 'db-btn', 'Show older logs');
+    more.type = 'button';
+    more.addEventListener('click', load);
+    box.append(head, list, status, more);
+
+    function draw() { // c.draw always points at the newest copy of this panel, so a load that finishes after a redraw still shows
+      list.textContent = '';
+      c.docs.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || '').localeCompare(a.createdAt || ''));
+      c.docs.forEach((d, i) => list.appendChild(logCard(d, i === 0)));
+      status.textContent = c.loading ? 'Loading…'
+        : c.failed ? c.failed
+        : c.done && !c.docs.length ? (st.perm.addDailyLogs ? 'No daily logs yet. Add one for each day on site: who was there, what got done, any issues, and photos.' : 'No daily logs yet. They show up here once someone adds one.')
+        : '';
+      more.hidden = c.done || c.loading || !!c.failed || !c.docs.length;
+      tabBtn.textContent = 'Daily logs' + (c.done ? ' (' + c.docs.length + ')' : c.docs.length ? ' (' + c.docs.length + '+)' : '');
+    }
+    async function load() {
+      if (c.loading || c.done) return;
+      c.loading = true; c.failed = '';
+      c.draw();
+      try {
+        let q = db.collection('projects/' + p.id + '/dailyLogs').orderBy('date', 'desc').limit(LOGS_PAGE);
+        if (c.cursor) q = q.startAfter(c.cursor);
+        const snap = await q.get();
+        snap.docs.forEach(d => c.docs.push(Object.assign({ id: d.id }, d.data())));
+        if (snap.docs.length) c.cursor = snap.docs[snap.docs.length - 1];
+        c.done = snap.docs.length < LOGS_PAGE;
+      } catch (ex) {
+        console.error('Daily logs:', ex);
+        c.failed = ex && ex.code === 'permission-denied' ? 'Daily logs couldn’t load: permission denied. Republish the Firestore rules, then refresh.' : 'Daily logs couldn’t load. Check your connection and refresh.';
+      }
+      c.loading = false;
+      c.draw();
+    }
+    c.draw = draw;
+    draw();
+    if (!c.docs.length && !c.done && !c.failed) load(); // first time on this project
+    return box;
   }
 
   // ---------- Files tab (on each project's page): a placeholder drop zone until storage is built ----------

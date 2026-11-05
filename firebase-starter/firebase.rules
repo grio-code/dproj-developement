@@ -74,6 +74,24 @@ service cloud.firestore {
         && d.clientAccess.keys().hasOnly(['portal', 'details', 'timeline', 'progress', 'punchItems', 'dailyLogs', 'files', 'notify']));
     }
 
+    // ADDED: daily logs (projects/{id}/dailyLogs). One record per day on site. Every text field is required, there must be at
+    // least one photo or video, and a log can't be edited after it is saved (it is a record of the day). The photos and videos
+    // themselves live in Firebase Storage (firebase-starter/storage.rules); media lists their paths and links.
+    function textIn(d, k, n) { return d[k] is string && d[k].trim().size() > 0 && d[k].size() <= n; }
+    function validDailyLog(d, pid) {
+      return d.keys().hasOnly(['workspaceId', 'projectId', 'projectName', 'date', 'title', 'onSite', 'progress', 'issues', 'other',
+                               'media', 'weather', 'createdAt', 'createdBy', 'createdByName'])
+        && d.keys().hasAll(['workspaceId', 'projectId', 'date', 'title', 'onSite', 'progress', 'issues', 'other', 'media', 'createdAt', 'createdBy'])
+        && d.workspaceId == projWs(pid) && d.projectId == pid
+        && d.createdBy == request.auth.uid
+        && d.date is string && d.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && textIn(d, 'title', 100) && textIn(d, 'onSite', 500)
+        && textIn(d, 'progress', 3000) && textIn(d, 'issues', 3000) && textIn(d, 'other', 3000)
+        && shortStr(d, 'projectName', 120) && shortStr(d, 'createdByName', 120)
+        && d.media is list && d.media.size() >= 1 && d.media.size() <= 30
+        && (!('weather' in d) || d.weather == null || d.weather is map);
+    }
+
     // ---------- workspaces ----------
     match /workspaces/{wid} {
       // Anyone can create their own workspace. Reading is one doc at a time (no listing everybody's workspaces).
@@ -170,6 +188,16 @@ service cloud.firestore {
       match /clients/{clientId} {
         allow read: if isMember(projWs(projectId));
         allow create, update: if can(projWs(projectId), 'manageProjects') && validClient(request.resource.data);
+        allow delete: if can(projWs(projectId), 'manageProjects') && projArchived(projectId);
+      }
+
+      // ADDED: the project's daily logs (daily-log.html). Everyone in the workspace can read them; the "Add daily logs"
+      // permission creates them. There is no update: a saved log can't be changed. Like clients, a log is deleted for good
+      // only together with an archived project (Settings > Archive > Delete).
+      match /dailyLogs/{logId} {
+        allow read: if isMember(projWs(projectId));
+        allow create: if can(projWs(projectId), 'addDailyLogs') && !projArchived(projectId)
+                      && validDailyLog(request.resource.data, projectId);
         allow delete: if can(projWs(projectId), 'manageProjects') && projArchived(projectId);
       }
     }

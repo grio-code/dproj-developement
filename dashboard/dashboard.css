@@ -2018,3 +2018,125 @@ a.db-att-row:focus-visible {
   position: relative; 
   z-index: 5; 
 }
+/* ---------- ADDED: Daily logs tab on a project's page ---------- */
+.db-logs-head { 
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 10px; 
+  margin-bottom: 14px; 
+}
+.db-logs-head h3 { 
+  margin: 0; 
+  font-size: 28px; 
+}
+.db-logs { 
+  list-style: none; 
+  margin: 0; 
+  padding: 0; 
+  display: grid; 
+  gap: 10px; 
+}
+.db-logs-wrap > .db-sub { 
+  margin: 12px 0 0; 
+}
+.db-logs-wrap > .db-btn { 
+  margin-top: 12px; 
+}
+.db-log summary { 
+  display: grid; 
+  gap: 2px; 
+  padding: 14px 16px; 
+  cursor: pointer; 
+  list-style: none; 
+}
+.db-log summary::-webkit-details-marker { 
+  display: none; 
+}
+.db-log summary:focus-visible { 
+  outline: 2px solid var(--amber); 
+  outline-offset: -2px; 
+  border-radius: 14px; 
+}
+.db-log-top { 
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: baseline; 
+  gap: 4px 12px; 
+}
+.db-log-top b { 
+  color: var(--amber); 
+}
+.db-log-title { 
+  font-weight: 600; 
+  overflow-wrap: anywhere; 
+}
+.db-log summary small { 
+  color: var(--faint); 
+  font-size: 13px; 
+}
+.db-log summary:hover .db-log-title { 
+  color: var(--amber); 
+}
+.db-log-body { 
+  display: grid; 
+  gap: 14px; 
+  padding: 4px 16px 16px; 
+  border-top: 1px solid var(--edge); 
+  padding-top: 14px; 
+  margin: 0 0 0; 
+}
+.db-log-facts { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+  gap: 12px 24px; 
+  margin: 0; 
+}
+.db-log-facts dt, .db-log-note h4, .db-log-media h4 { 
+  margin: 0 0 3px; 
+  color: var(--faint); 
+  font: 600 12px var(--f-body); 
+}
+.db-log-facts dd { 
+  margin: 0; 
+  overflow-wrap: anywhere; 
+}
+.db-log-note p { 
+  margin: 0; 
+  white-space: pre-wrap; 
+  overflow-wrap: anywhere; 
+}
+.db-log-media { 
+  display: grid; 
+  gap: 8px; 
+}
+.db-log-media h4 { 
+  margin-top: 6px; 
+}
+.db-log-tiles { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+  gap: 8px; 
+}
+.db-log-tiles img, .db-log-tiles video { 
+  width: 100%; 
+  aspect-ratio: 4 / 3; 
+  object-fit: cover; 
+  display: block; 
+  border-radius: 8px; 
+  background: rgba(255, 255, 255, .06); 
+}
+.db-log-photo { 
+  display: block; 
+  border-radius: 8px; 
+}
+.db-log-photo:focus-visible { 
+  outline: 2px solid var(--amber); 
+  outline-offset: 2px; 
+}
+.db-log-by { 
+  margin: 0; 
+  color: var(--faint); 
+  font-size: 13px; 
+}

@@ -7,7 +7,8 @@
       "**/node_modules/**",
       "README.md",
       "firebase-debug.log",
-      "firebase-starter/firebase.rules"
+      "firebase-starter/firebase.rules",
+      "firebase-starter/storage.rules"
     ],
     "headers": [
       {
@@ -20,5 +21,8 @@
         ]
       }
     ]
+  },
+  "storage": {
+    "rules": "firebase-starter/storage.rules"
   }
 }
