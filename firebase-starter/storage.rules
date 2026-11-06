@@ -7,8 +7,8 @@
 //   firebase deploy --only storage
 // The first time, Firebase may ask you to let Storage read Firestore rules data: say yes.
 //
-// Nothing here lets anyone overwrite or change a saved file. A file can be deleted only together with an archived project
-// (Settings > Archive > Delete), the same "archive first, always" rule as the rest of the app (see README.md, data safety).
+// Nothing here lets anyone overwrite or change a saved file. Only admins can delete a file (with a daily log, or with an
+// archived project in Settings > Archive > Delete).
 
 rules_version = '2';
 service firebase.storage {
@@ -46,7 +46,8 @@ service firebase.storage {
                     && project(pid).get('archived', false) != true
                     && okFile();
       // No update. Delete only with an archived project.
-      allow delete: if can(wid, 'manageProjects') && project(pid).get('archived', false) == true;
+      // CHANGED: only admins can delete a file (they delete a log's files together with the log).
+      allow delete: if isAdmin(wid);
     }
   }
 }

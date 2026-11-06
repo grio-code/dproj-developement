@@ -19,7 +19,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="home/index.css" rel="stylesheet">
-<link href="dashboard/dashboard.css?v=19" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=20" rel="stylesheet">
 <!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
 <script>try { if (localStorage.getItem('hh-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 
@@ -27,12 +27,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script> <!-- ADDED: lets admins remove a daily log's photos and videos -->
 <script src="firebase-starter/firebase-config.js"></script>
 <script src="firebase-starter/perms.js?v=3"></script> <!--who may do what (shared by every page) -->
 <script src="firebase-starter/legacy-data.js?v=2"></script> <!-- brings back lists from before workspaces -->
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="dashboard/dashboard.js?v=23" defer></script>
+<script src="dashboard/dashboard.js?v=24" defer></script>
 <script src="dashboard/side-menu.js?v=1" defer></script> <!-- hamburger menu on phones and iPads -->
 
 

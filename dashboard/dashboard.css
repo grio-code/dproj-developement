@@ -2140,3 +2140,9 @@ a.db-att-row:focus-visible {
   color: var(--faint); 
   font-size: 13px; 
 }
+
+.db-log-acts { 
+  margin-top: 12px; 
+  display: flex; 
+  justify-content: flex-end; 
+}

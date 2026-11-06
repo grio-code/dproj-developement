@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "homehub-721"
+    "default": "homehub-developement",
+    "production": "homehub-721"
   }
 }

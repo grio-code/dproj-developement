@@ -192,13 +192,13 @@ service cloud.firestore {
       }
 
       // ADDED: the project's daily logs (daily-log.html). Everyone in the workspace can read them; the "Add daily logs"
-      // permission creates them. There is no update: a saved log can't be changed. Like clients, a log is deleted for good
-      // only together with an archived project (Settings > Archive > Delete).
+      // permission creates them. There is no update: a saved log can't be changed. Only admins can delete a log.
       match /dailyLogs/{logId} {
         allow read: if isMember(projWs(projectId));
         allow create: if can(projWs(projectId), 'addDailyLogs') && !projArchived(projectId)
                       && validDailyLog(request.resource.data, projectId);
-        allow delete: if can(projWs(projectId), 'manageProjects') && projArchived(projectId);
+        // CHANGED: only admins (the owner and anyone made an admin) can delete a daily log
+        allow delete: if isAdmin(projWs(projectId));
       }
     }
 

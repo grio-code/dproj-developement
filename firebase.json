@@ -24,5 +24,8 @@
   },
   "storage": {
     "rules": "firebase-starter/storage.rules"
+  },
+  "firestore": {
+    "rules": "firebase-starter/firebase.rules"
   }
 }

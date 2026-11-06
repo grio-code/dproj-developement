@@ -1920,6 +1920,19 @@
             }
           );
 
+        // If the upload makes no progress for 30 seconds, stop and show an error instead of hanging forever.
+        let stallTimer;
+        const armStall = () => {
+          clearTimeout(stallTimer);
+          stallTimer = setTimeout(() => {
+            try { task.cancel(); } catch (e) {}
+            const err = new Error('Upload stalled. Check the Storage bucket in firebase-config.js and that the Storage rules are published.');
+            err.code = 'storage/stalled';
+            reject(err);
+          }, 30000);
+        };
+        armStall();
+
         task.on(
           'state_changed',
 
@@ -1927,6 +1940,7 @@
           // Upload progress
           // ------------------------------
           snapshot => {
+            armStall();
             it.progress =
               snapshot.totalBytes
                 ? snapshot.bytesTransferred /
@@ -1940,6 +1954,7 @@
           // Upload failed
           // ------------------------------
           error => {
+            clearTimeout(stallTimer);
             if (it.el) {
               it.el.classList.add(
                 'is-failed'
@@ -1959,6 +1974,7 @@
           // Upload completed
           // ------------------------------
           () => {
+            clearTimeout(stallTimer);
             resolve();
           }
         );
@@ -2090,15 +2106,16 @@
       ex.code ||
       '';
 
-    if (
-      c ===
-        'permission-denied' ||
-      c ===
-        'storage/unauthorized'
-    ) {
-      return (
-        'Couldn’t submit the log: permission denied. Ask an admin to give you “Add daily logs” in Settings, and make sure the Firestore and Storage rules are published.'
-      );
+    if (c === 'storage/unauthorized') {
+      return 'Couldn’t upload the photo or video: Storage denied it (storage/unauthorized). Publish storage.rules in this Firebase project (Storage > Rules), publish firebase.rules too, and make sure you have “Add daily logs” in Settings.';
+    }
+
+    if (c === 'permission-denied') {
+      return 'Couldn’t save the log: Firestore denied it (permission-denied). Publish firebase.rules in this Firebase project (Firestore Database > Rules) and make sure you have “Add daily logs” in Settings.';
+    }
+
+    if (c === 'storage/stalled') {
+      return ex.message;
     }
 
     if (

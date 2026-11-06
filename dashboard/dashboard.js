@@ -1358,7 +1358,7 @@
     });
     return wrap;
   }
-  function logCard(d, open) {
+  function logCard(d, open, onDelete) {
     const det = el('details', 'db-log db-glass');
     det.open = open; // the latest one starts open
     const sum = el('summary');
@@ -1376,6 +1376,14 @@
       logNote('Progress made today', d.progress), logNote('Issues on site', d.issues), logNote('Anything else', d.other),
       logMedia(d.media),
       el('p', 'db-log-by', 'Logged by ' + (d.createdByName || 'someone') + (toMs(d.createdAt) ? ' · ' + ago(toMs(d.createdAt)) : '')));
+    if (onDelete) { // ADDED: only admins get this (the rules enforce it too)
+      const acts = el('div', 'db-log-acts');
+      const del = el('button', 'db-btn db-btn--danger', 'Delete this log');
+      del.type = 'button';
+      del.addEventListener('click', () => onDelete(d, del));
+      acts.appendChild(del);
+      body.appendChild(acts);
+    }
     det.append(sum, body);
     return det;
   }
@@ -1395,13 +1403,39 @@
     function draw() { // c.draw always points at the newest copy of this panel, so a load that finishes after a redraw still shows
       list.textContent = '';
       c.docs.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || '').localeCompare(a.createdAt || ''));
-      c.docs.forEach((d, i) => list.appendChild(logCard(d, i === 0)));
+      c.docs.forEach((d, i) => list.appendChild(logCard(d, i === 0, st.isAdmin ? deleteLog : null)));
       status.textContent = c.loading ? 'Loading…'
         : c.failed ? c.failed
         : c.done && !c.docs.length ? (st.perm.addDailyLogs ? 'No daily logs yet. Add one for each day on site: who was there, what got done, any issues, and photos.' : 'No daily logs yet. They show up here once someone adds one.')
         : '';
       more.hidden = c.done || c.loading || !!c.failed || !c.docs.length;
       tabBtn.textContent = 'Daily logs' + (c.done ? ' (' + c.docs.length + ')' : c.docs.length ? ' (' + c.docs.length + '+)' : '');
+    }
+    // ADDED: admins only. The photos and videos go first, then the log: if a file can't be removed this stops and the log stays to try again.
+    async function deleteLog(d, btn) {
+      if (!st.isAdmin) return;
+      const n = Array.isArray(d.media) ? d.media.length : 0;
+      if (!confirm('Delete the daily log “' + (d.title || 'Daily log') + '” for ' + fmtDay(d.date) + ' for good' + (n ? ', along with its ' + plural(n, 'photo or video') + '?' : '?') + ' This can’t be undone.')) return;
+      btn.disabled = true; btn.textContent = 'Deleting…';
+      try {
+        if (!firebase.storage) throw Object.assign(new Error('Storage did not load'), { code: 'storage/not-loaded' });
+        const dir = 'workspaces/' + st.wid + '/projects/' + p.id + '/dailyLogs/';
+        for (const m of (Array.isArray(d.media) ? d.media : [])) {
+          if (!m || typeof m.path !== 'string' || !m.path.startsWith(dir)) continue; // only files that belong to this project's logs
+          try { await firebase.storage().ref(m.path).delete(); }
+          catch (ex) { if (!ex || ex.code !== 'storage/object-not-found') throw ex; } // already gone is fine
+        }
+        await db.doc('projects/' + p.id + '/dailyLogs/' + d.id).delete();
+        c.docs = c.docs.filter(x => x.id !== d.id);
+        toast('Daily log deleted.');
+        c.draw();
+      } catch (ex) {
+        console.error('Delete daily log:', ex);
+        btn.disabled = false; btn.textContent = 'Delete this log';
+        toast(ex && (ex.code === 'permission-denied' || ex.code === 'storage/unauthorized')
+          ? 'Only admins can delete daily logs. If you are an admin, republish the Firestore and Storage rules.'
+          : 'Couldn’t delete that log. Check your connection and try again.');
+      }
     }
     async function load() {
       if (c.loading || c.done) return;
