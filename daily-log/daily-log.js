@@ -40,6 +40,9 @@
     dirty: false,
 
     projects: [],
+    sideProjects: [],
+    sideFailed: false,
+    perm: {},
     project: null,
     files: [],
     ws: {},
@@ -165,10 +168,33 @@
       ? p.status
       : 'open';
 
+  // Every project in the workspace that isn't archived, in any stage (the dashboard sidebar shows all three stages).
+  async function loadSideProjects() {
+    try {
+      const snap = await db
+        .collection('projects')
+        .where('workspaceId', '==', st.wid)
+        .get();
+
+      st.sideProjects = snap.docs
+        .map(d => Object.assign({ id: d.id }, d.data()))
+        .filter(p => !p.archived);
+      st.sideFailed = false;
+    } catch (e) {
+      console.error('Sidebar projects:', e);
+      st.sideProjects = [];
+      st.sideFailed = true;
+    }
+  }
+
   function renderSidebar() {
     const name = st.ws.name || 'Workspace';
 
     $('dbWsName').textContent = name;
+
+    // Same as the dashboard: the + menu only offers what this person may do.
+    $('dbAddProject').hidden = !st.perm.createProjects;
+    $('dbAddLog').hidden = !st.perm.addDailyLogs;
 
     const logo = $('dbWsLogo');
 
@@ -193,8 +219,8 @@
 
     const found =
       !q
-        ? st.projects
-        : st.projects.filter(p =>
+        ? st.sideProjects
+        : st.sideProjects.filter(p =>
             [
               sidebarProjName(p),
               p.address,
@@ -239,7 +265,13 @@
 
     if (!list.length) {
       const msg =
-        q
+        st.sideFailed
+          ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.'
+          : !st.sideProjects.length
+          ? (st.perm.createProjects
+              ? 'No projects yet. Use + to create one.'
+              : 'No projects yet.')
+          : q
           ? 'No ' +
             st.stage +
             ' projects match “' +
@@ -272,6 +304,10 @@
           '/details';
 
         a.dataset.pid = p.id;
+
+        if (fixedId && p.id === fixedId) {
+          a.setAttribute('aria-current', 'page');
+        }
 
         a.append(
           el(
@@ -2527,6 +2563,8 @@
               )
             : {};
 
+        st.perm = perm;
+
         st.canLog =
           !!perm.addDailyLogs;
 
@@ -2540,16 +2578,23 @@
           $('dlProject').disabled =
             true;
 
+          // They can't add logs, but the sidebar should still list the projects.
+          await loadSideProjects();
+          renderSidebar();
+
           st.ready =
             true;
 
           return;
         }
 
+        // The sidebar needs every project, even when this page was opened from
+        // one project's page (?project=...), so load them before anything else.
+        await loadSideProjects();
+        renderSidebar();
+
         await loadProjects();
 
-        // Populate the same project data
-        // used by the dashboard sidebar.
         renderSidebar();
 
         st.ready =
