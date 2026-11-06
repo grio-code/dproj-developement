@@ -8,7 +8,6 @@ body {
   color: #fff;
   font-family: var(--f-body);
 }
-
 /* Colors for everything on the page except the top bar and dock */
 body > :not(.fnav):not(.dock):not(svg) {
   --bg: rgba(0, 0, 0, .34);             /* fields and sunken areas */
